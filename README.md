@@ -6,13 +6,16 @@ A Chrome extension for building and tracking daily habits with streaks, drag-and
 
 ## Screenshots
 
-> *TBA*
+<img width="2560" height="1447" alt="react-1" src="https://github.com/user-attachments/assets/fd149f2b-0cbb-49cc-9fe7-b4701e879f08" />
+<img width="2560" height="1458" alt="react-2" src="https://github.com/user-attachments/assets/fe3369ef-adce-4b3a-9aed-e177bf730adb" />
+<img width="2560" height="1441" alt="react-3" src="https://github.com/user-attachments/assets/f35b00a1-bc2a-49b9-9afa-e6de5709191f" />
+<img width="2560" height="1444" alt="react-4" src="https://github.com/user-attachments/assets/75e1684e-8a8d-44c8-b610-0c369cd4cec8" />
 
 ---
 
 ## Overview
 
-A browser extension that lives in your Chrome toolbar, making habit tracking frictionless and always one click away. It stores all data locally using the Chrome Storage API so your progress is private and persists across sessions.
+A browser extension that lives in the Chrome toolbar, making habit tracking always one click away. It stores all data locally using the Chrome Storage API so progress is private and persists across sessions.
 
 The goal was to build a genuinely useful productivity tool while exploring how a modern React app can be packaged and deployed as a Chrome extension.
 
@@ -79,7 +82,7 @@ The app is a single-page React application bundled by Create React App and loade
 [chrome.storage.local]
 ```
 
-State is managed entirely with React hooks (`useState`, `useEffect`, `useCallback`). There is no external state library — the data shape is simple enough that local component state and `chrome.storage` are sufficient.
+State is managed entirely with React hooks (`useState`, `useEffect`, `useCallback`). There is no external state library. The data shape is simple enough that local component state and `chrome.storage` are sufficient.
 
 ---
 
@@ -135,7 +138,7 @@ habit-tracker/
 │   ├── logo48.png
 │   └── logo192.png
 ├── src/
-│   ├── App.js               # Main component — all state, views, and logic
+│   ├── App.js               # Main component (all state, views, and logic)
 │   ├── App.css              # Styles
 │   └── index.js             # React entry point
 └── package.json
