@@ -3,9 +3,49 @@ import useStorage from './useStorage';
 import { getDateKey } from '../utils/dateUtils';
 import { calculateHabitStats, getOverallStats } from '../utils/statsUtils';
 
-const useHabits = () => {
+// Define types
+interface Habit {
+  id: string;
+  name: string;
+  color: string;
+  order: number;
+}
+
+interface Completions {
+  [habitId: string]: {
+    [dateKey: string]: boolean;
+  };
+}
+
+interface HabitStats {
+  currentStreak: number;
+  longestStreak: number;
+  totalCompletions: number;
+  completionRate: number;
+}
+
+interface OverallStats {
+  totalHabits: number;
+  totalCompletions: number;
+  activeToday: number;
+}
+
+interface UseHabitsReturn {
+  habits: Habit[];
+  completions: Completions;
+  stats: Record<string, HabitStats>;
+  overall: OverallStats;
+  selectedHabitId: string | null;
+  setSelectedHabitId: (id: string | null) => void;
+  toggleHabit: (habitId: string, date: Date) => void;
+  addHabit: (name: string) => void;
+  deleteHabit: (habitId: string) => void;
+  reorderHabits: (sourceIndex: number, destinationIndex: number) => void;
+}
+
+const useHabits = (): UseHabitsReturn => {
   const { habits, setHabits, completions, setCompletions } = useStorage();
-  const [selectedHabitId, setSelectedHabitId] = useState(null);
+  const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
 
   const stats = useMemo(
     () => calculateHabitStats(habits, completions),
@@ -17,9 +57,9 @@ const useHabits = () => {
     [habits, completions]
   );
 
-  const toggleHabit = (habitId, date) => {
+  const toggleHabit = (habitId: string, date: Date): void => {
     const dateKey = getDateKey(date);
-    setCompletions((prev) => {
+    setCompletions((prev: Completions) => {
       const existing = prev[habitId] || {};
       const updated = { ...existing };
       if (updated[dateKey]) {
@@ -31,28 +71,28 @@ const useHabits = () => {
     });
   };
 
-  const addHabit = (name) => {
+  const addHabit = (name: string): void => {
     if (!name.trim()) return;
-    const newHabit = {
+    const newHabit: Habit = {
       id: Date.now().toString(),
       name: name.trim(),
       color: `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`,
       order: habits.length,
     };
-    setHabits((prev) => [...prev, newHabit]);
+    setHabits((prev: Habit[]) => [...prev, newHabit]);
   };
 
-  const deleteHabit = (habitId) => {
+  const deleteHabit = (habitId: string): void => {
     if (!window.confirm('Delete this habit? All progress will be lost.')) return;
-    setHabits((prev) => prev.filter((h) => h.id !== habitId));
-    setCompletions((prev) => {
+    setHabits((prev: Habit[]) => prev.filter((h) => h.id !== habitId));
+    setCompletions((prev: Completions) => {
       const next = { ...prev };
       delete next[habitId];
       return next;
     });
   };
 
-  const reorderHabits = (sourceIndex, destinationIndex) => {
+  const reorderHabits = (sourceIndex: number, destinationIndex: number): void => {
     const items = Array.from(habits);
     const [moved] = items.splice(sourceIndex, 1);
     items.splice(destinationIndex, 0, moved);
