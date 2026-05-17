@@ -174,3 +174,4 @@ habit-tracker/
 - **Dark mode** — matching the extension to the system theme
 - **Habit archive** — hiding completed or retired habits without losing their history
 - **Chrome Web Store release** — packaging and publishing so anyone can install with one click
+- **Instead of using JavaScript, using TypeScript** — in order to introduce static typing and catch errors earlier 
