@@ -1,9 +1,44 @@
 import React from 'react';
-import { DragDropContext, Droppable } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { Plus } from 'lucide-react';
 import HabitCard from './HabitCard';
 
-const HabitList = ({
+// Define types
+interface Habit {
+  id: string;
+  name: string;
+  color: string;
+}
+
+interface Stats {
+  [habitId: string]: {
+    currentStreak: number;
+    longestStreak?: number;
+    totalCompletions?: number;
+  };
+}
+
+interface Completions {
+  [habitId: string]: {
+    [dateKey: string]: boolean;
+  };
+}
+
+interface HabitListProps {
+  habits: Habit[];
+  days: Date[];
+  view: 'daily' | 'weekly' | 'monthly';
+  currentDate: Date;
+  completions: Completions;
+  stats: Stats;
+  onToggle: (habitId: string, day: Date) => void;
+  onDelete: (habitId: string) => void;
+  onSelect: (habitId: string) => void;
+  onReorder: (startIndex: number, endIndex: number) => void;
+  onAddClick: () => void;
+}
+
+const HabitList: React.FC<HabitListProps> = ({
   habits,
   days,
   view,
@@ -16,7 +51,7 @@ const HabitList = ({
   onReorder,
   onAddClick,
 }) => {
-  const handleDragEnd = (result) => {
+  const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     onReorder(result.source.index, result.destination.index);
   };

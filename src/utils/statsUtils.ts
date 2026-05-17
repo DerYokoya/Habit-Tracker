@@ -2,8 +2,42 @@ import { format, subDays } from 'date-fns';
 import { getDateKey } from './dateUtils';
 import { calculateCurrentStreak, calculateLongestStreak } from './streakUtils';
 
-export const calculateHabitStats = (habits, completions) => {
-  const stats = {};
+// Define types
+interface Habit {
+  id: string;
+  name: string;
+  color: string;
+}
+
+interface Completions {
+  [habitId: string]: {
+    [dateKey: string]: boolean;
+  };
+}
+
+interface HabitStats {
+  currentStreak: number;
+  longestStreak: number;
+  totalCompletions: number;
+  completionRate: number;
+}
+
+interface OverallStats {
+  totalHabits: number;
+  totalCompletions: number;
+  activeToday: number;
+}
+
+interface ChartDataPoint {
+  date: string;
+  completed: number; // 0 or 1
+}
+
+export const calculateHabitStats = (
+  habits: Habit[], 
+  completions: Completions
+): Record<string, HabitStats> => {
+  const stats: Record<string, HabitStats> = {};
 
   habits.forEach((habit) => {
     const habitCompletions = completions[habit.id] || {};
@@ -20,7 +54,10 @@ export const calculateHabitStats = (habits, completions) => {
   return stats;
 };
 
-export const getOverallStats = (habits, completions) => {
+export const getOverallStats = (
+  habits: Habit[], 
+  completions: Completions
+): OverallStats => {
   const todayKey = getDateKey(new Date());
   let totalCompletions = 0;
   let activeToday = 0;
@@ -31,10 +68,17 @@ export const getOverallStats = (habits, completions) => {
     if (habitCompletions[todayKey]) activeToday++;
   });
 
-  return { totalHabits: habits.length, totalCompletions, activeToday };
+  return { 
+    totalHabits: habits.length, 
+    totalCompletions, 
+    activeToday 
+  };
 };
 
-export const getChartData = (habitId, completions) => {
+export const getChartData = (
+  habitId: string | null, 
+  completions: Completions
+): ChartDataPoint[] => {
   if (!habitId) return [];
   const habitCompletions = completions[habitId] || {};
 

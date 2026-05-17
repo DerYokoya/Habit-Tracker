@@ -4,7 +4,27 @@ import { Flame, GripVertical, Trash2 } from 'lucide-react';
 import { format, isSameDay, isSameMonth } from 'date-fns';
 import { getDateKey } from '../utils/dateUtils';
 
-const HabitCard = ({
+// Define types
+interface Habit {
+  id: string;
+  name: string;
+  color: string;
+}
+
+interface HabitCardProps {
+  habit: Habit;
+  index: number;
+  days: Date[];
+  view: 'daily' | 'weekly' | 'monthly';
+  currentDate: Date;
+  completions: Record<string, Record<string, boolean>>;
+  streak: number;
+  onToggle: (habitId: string, day: Date) => void;
+  onDelete: (habitId: string) => void;
+  onSelect: (habitId: string) => void;
+}
+
+const HabitCard: React.FC<HabitCardProps> = ({
   habit,
   index,
   days,
@@ -57,7 +77,7 @@ const HabitCard = ({
                 key={idx}
                 className={`day-cell ${isCompleted ? 'completed' : ''} ${isToday ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''}`}
                 onClick={() => onToggle(habit.id, day)}
-                style={{ '--habit-color': habit.color }}
+                style={{ '--habit-color': habit.color } as React.CSSProperties}
               >
                 {view === 'daily' && format(day, 'd')}
                 {view === 'weekly' && (

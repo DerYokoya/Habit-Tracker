@@ -1,7 +1,12 @@
 import React from 'react';
 import { Flame, Award } from 'lucide-react';
 
-const Header = ({ activeToday, totalHabits }) => (
+interface HeaderProps {
+  activeToday: number;
+  totalHabits: number;
+}
+
+const Header: React.FC<HeaderProps> = ({ activeToday, totalHabits }) => (
   <div className="header">
     <div className="header-title">
       <Flame size={24} color="#f59e0b" />

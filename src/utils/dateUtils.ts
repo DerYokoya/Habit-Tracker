@@ -12,9 +12,12 @@ import {
   subMonths,
 } from 'date-fns';
 
-export const getDateKey = (date) => format(date, 'yyyy-MM-dd');
+type ViewType = 'daily' | 'weekly' | 'monthly';
+type NavigationDirection = 'prev' | 'next';
 
-export const getDaysForView = (view, currentDate) => {
+export const getDateKey = (date: Date): string => format(date, 'yyyy-MM-dd');
+
+export const getDaysForView = (view: ViewType, currentDate: Date): Date[] => {
   if (view === 'daily') {
     return [currentDate];
   }
@@ -36,14 +39,18 @@ export const getDaysForView = (view, currentDate) => {
   return eachDayOfInterval({ start: paddedStart, end: paddedEnd });
 };
 
-export const navigateDate = (view, currentDate, direction) => {
+export const navigateDate = (
+  view: ViewType, 
+  currentDate: Date, 
+  direction: NavigationDirection
+): Date => {
   const delta = direction === 'prev' ? -1 : 1;
   if (view === 'daily') return delta === -1 ? subDays(currentDate, 1) : addDays(currentDate, 1);
   if (view === 'weekly') return delta === -1 ? subDays(currentDate, 7) : addDays(currentDate, 7);
   return delta === -1 ? subMonths(currentDate, 1) : addMonths(currentDate, 1);
 };
 
-export const getViewTitle = (view, currentDate) => {
+export const getViewTitle = (view: ViewType, currentDate: Date): string => {
   if (view === 'daily') return format(currentDate, 'EEEE, MMMM d, yyyy');
   if (view === 'weekly') {
     const start = startOfWeek(currentDate, { weekStartsOn: 1 });

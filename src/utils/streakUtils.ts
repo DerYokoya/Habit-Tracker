@@ -1,7 +1,12 @@
 import { subDays } from 'date-fns';
 import { getDateKey } from './dateUtils';
 
-export const calculateCurrentStreak = (habitCompletions) => {
+// Define type for habit completions object
+interface HabitCompletions {
+  [dateKey: string]: boolean;
+}
+
+export const calculateCurrentStreak = (habitCompletions: HabitCompletions): number => {
   let streak = 0;
   let date = new Date();
   date.setHours(0, 0, 0, 0);
@@ -14,7 +19,7 @@ export const calculateCurrentStreak = (habitCompletions) => {
   return streak;
 };
 
-export const calculateLongestStreak = (habitCompletions) => {
+export const calculateLongestStreak = (habitCompletions: HabitCompletions): number => {
   const dates = Object.keys(habitCompletions).sort();
   let longest = 0;
   let temp = 0;
@@ -23,7 +28,7 @@ export const calculateLongestStreak = (habitCompletions) => {
     const current = new Date(dates[i]);
     const prev = i > 0 ? new Date(dates[i - 1]) : null;
 
-    if (prev && current - prev === 86400000) {
+    if (prev && current.getTime() - prev.getTime() === 86400000) {
       temp++;
     } else {
       temp = 1;
