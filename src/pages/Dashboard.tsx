@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { Plus, Calendar, CalendarDays, LayoutGrid, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isToday } from 'date-fns';
+import { format, addDays, subDays, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { useChromeStorage } from '../hooks/useChromeStorage';
 import { useStreakCalculator } from '../hooks/useStreakCalculator';
 import { HabitRow } from '../components/HabitRow';
@@ -12,7 +12,7 @@ const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 
 export const Dashboard: React.FC = () => {
   const { habits, saveHabits, loading } = useChromeStorage();
-  const { habitStats, calculateStreakForHabit } = useStreakCalculator(habits);
+  const { habitStats } = useStreakCalculator(habits);
   const [view, setView] = useState<ViewType>('daily');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { GripVertical, Trash2, Flame, BarChart3 } from 'lucide-react';
 import { Habit, HabitStats, ViewType } from '../types';
-import { format, isToday, startOfWeek, endOfWeek, eachDayOfInterval, getDate, isSameMonth } from 'date-fns';
+import { format, isToday, startOfWeek, endOfWeek, eachDayOfInterval, getDate } from 'date-fns';
 
 interface HabitRowProps {
   habit: Habit;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Habit, StorageData } from '../types';
+import { Habit } from '../types';
 
 const DEFAULT_HABITS: Habit[] = [
   {
