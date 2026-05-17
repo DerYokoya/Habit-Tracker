@@ -1,9 +1,6 @@
 import { subDays } from 'date-fns';
 import { getDateKey } from './dateUtils';
 
-// This file contains utility functions for calculating habit
-// streaks based on completion data.
-
 export const calculateCurrentStreak = (habitCompletions) => {
   let streak = 0;
   let date = new Date();
