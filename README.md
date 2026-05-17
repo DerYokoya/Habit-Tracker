@@ -25,7 +25,7 @@ The goal was to build a genuinely useful productivity tool while exploring how a
  
 Most habit tracking apps require users to pull out their phones, open an app, log in, and navigate to today's view. By the time they get there, the moment has passed. The habit doesn't get logged. This Habit Tracker lives in the user's browser toolbar, in one click and zero friction. Since most people spend the majority of their day in their browser, keeping the tracker there means it's always visible and accessible. No account, no subscription, no app to download. The data stays on the machine.
  
-The secondary problem is accountability over time. Checking off a box is satisfying; watching a streak grow is motivating. Habit Flow makes streaks and progress visible at every level, with daily check-ins, weekly patterns, and monthly history.
+The secondary problem is accountability over time. Checking off a box is satisfying; watching a streak grow is motivating. Streaks and progress are made visible at every level, with daily check-ins, weekly patterns, and monthly history.
 
 ---
 
