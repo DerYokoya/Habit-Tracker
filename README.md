@@ -21,6 +21,14 @@ The goal was to build a genuinely useful productivity tool while exploring how a
 
 ---
 
+## What Problem This Solves
+ 
+Most habit tracking apps require users to pull out their phones, open an app, log in, and navigate to today's view. By the time they get there, the moment has passed. The habit doesn't get logged. This Habit Tracker lives in the user's browser toolbar, in one click and zero friction. Since most people spend the majority of their day in their browser, keeping the tracker there means it's always visible and accessible. No account, no subscription, no app to download. The data stays on the machine.
+ 
+The secondary problem is accountability over time. Checking off a box is satisfying; watching a streak grow is motivating. Habit Flow makes streaks and progress visible at every level, with daily check-ins, weekly patterns, and monthly history.
+
+---
+
 ## Features
 
 ### Habit Management
@@ -158,10 +166,11 @@ habit-tracker/
 ---
 
 ## Future Improvements
-
-- Reminder notifications via the Chrome Alarms API
-- Habit categories and tags
-- Export progress as CSV or JSON
-- Dark mode
-- Habit archive (hide without deleting)
-- Weekly completion rate goal setting
+ 
+- **Reminder notifications** — using the Chrome Alarms API to remind the user at a set time each day
+- **Habit categories and tags** — grouping related habits and filter by category
+- **Goal setting** — defining a weekly target per habit (e.g. 5 out of 7 days) and tracking progress toward it
+- **Export** — downloading history as CSV or JSON
+- **Dark mode** — matching the extension to the system theme
+- **Habit archive** — hiding completed or retired habits without losing their history
+- **Chrome Web Store release** — packaging and publishing so anyone can install with one click
