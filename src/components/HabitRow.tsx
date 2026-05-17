@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { GripVertical, Trash2, Flame, BarChart3 } from 'lucide-react';
 import { Habit, HabitStats, ViewType } from '../types';
-import { format, isToday, startOfWeek, endOfWeek, eachDayOfInterval, getDate } from 'date-fns';
+import { format, isToday, isFuture, startOfDay, startOfWeek, endOfWeek, eachDayOfInterval, getDate } from 'date-fns';
 
 interface HabitRowProps {
   habit: Habit;
@@ -27,15 +27,19 @@ export const HabitRow: React.FC<HabitRowProps> = ({
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  const isFutureDate = (date: Date) => isFuture(startOfDay(date));
+
   const renderDailyView = () => {
     const dateStr = format(currentDate, 'yyyy-MM-dd');
     const isCompleted = habit.completions[dateStr] || false;
+    const future = isFutureDate(currentDate);
 
     return (
       <button
-        className={`day-cell ${isCompleted ? 'completed' : ''} ${isToday(currentDate) ? 'today' : ''}`}
+        className={`day-cell ${isCompleted ? 'completed' : ''} ${isToday(currentDate) ? 'today' : ''} ${future ? 'future' : ''}`}
         style={{ '--habit-color': habit.color } as React.CSSProperties}
-        onClick={() => onToggle(habit.id, currentDate)}
+        onClick={() => !future && onToggle(habit.id, currentDate)}
+        disabled={future}
       >
         {format(currentDate, 'd')}
       </button>
@@ -52,12 +56,14 @@ export const HabitRow: React.FC<HabitRowProps> = ({
         {days.map(day => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const isCompleted = habit.completions[dateStr] || false;
+          const future = isFutureDate(day);
           return (
             <button
               key={dateStr}
-              className={`day-cell ${isCompleted ? 'completed' : ''} ${isToday(day) ? 'today' : ''}`}
+              className={`day-cell ${isCompleted ? 'completed' : ''} ${isToday(day) ? 'today' : ''} ${future ? 'future' : ''}`}
               style={{ '--habit-color': habit.color } as React.CSSProperties}
-              onClick={() => onToggle(habit.id, day)}
+              onClick={() => !future && onToggle(habit.id, day)}
+              disabled={future}
             >
               <div className="weekly-cell">
                 <span className="week-day">{format(day, 'EEE')}</span>
@@ -88,14 +94,15 @@ export const HabitRow: React.FC<HabitRowProps> = ({
       const isCurrentMonth = dayNumber >= 1 && dayNumber <= daysInMonth;
       const dateStr = format(date, 'yyyy-MM-dd');
       const isCompleted = habit.completions[dateStr] || false;
+      const future = isCurrentMonth && isFutureDate(date);
 
       days.push(
         <button
           key={i}
-          className={`day-cell ${isCompleted ? 'completed' : ''} ${isToday(date) ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''}`}
+          className={`day-cell ${isCompleted ? 'completed' : ''} ${isToday(date) ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''} ${future ? 'future' : ''}`}
           style={{ '--habit-color': habit.color } as React.CSSProperties}
-          onClick={() => isCurrentMonth && onToggle(habit.id, date)}
-          disabled={!isCurrentMonth}
+          onClick={() => isCurrentMonth && !future && onToggle(habit.id, date)}
+          disabled={!isCurrentMonth || future}
         >
           {isCurrentMonth ? dayNumber : ''}
         </button>

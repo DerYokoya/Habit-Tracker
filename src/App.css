@@ -278,6 +278,11 @@
   opacity: 0.3;
 }
 
+.day-cell.future {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .weekly-cell {
   display: flex;
   flex-direction: column;
