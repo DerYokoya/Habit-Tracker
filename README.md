@@ -1,6 +1,6 @@
-Habit Tracker
+# Habit Tracker
 
-A Chrome extension for building and tracking daily habits with streaks, drag-and-drop reordering, daily/weekly/monthly views, and per-habit statistics. Built with React and packaged as a Manifest V3 Chrome extension.
+A Chrome extension for building and tracking daily habits with streaks, drag-and-drop reordering, daily/weekly/monthly views, and per-habit statistics. Built with React + TypeScript and packaged as a Manifest V3 Chrome extension.
 
 ---
 
@@ -17,14 +17,14 @@ A Chrome extension for building and tracking daily habits with streaks, drag-and
 
 A browser extension that lives in the Chrome toolbar, making habit tracking always one click away. It stores all data locally using the Chrome Storage API so progress is private and persists across sessions.
 
-The goal was to build a genuinely useful productivity tool while exploring how a modern React app can be packaged and deployed as a Chrome extension.
+The goal was to build a genuinely useful productivity tool while exploring how a modern React + TypeScript app can be packaged and deployed as a Chrome extension.
 
 ---
 
 ## What Problem This Solves
- 
-Most habit tracking apps require users to pull out their phones, open an app, log in, and navigate to today's view. By the time they get there, the moment has passed. The habit doesn't get logged. This Habit Tracker lives in the user's browser toolbar, in one click and zero friction. Since most people spend the majority of their day in their browser, keeping the tracker there means it's always visible and accessible. No account, no subscription, no app to download. The data stays on the machine.
- 
+
+Most habit tracking apps require users to pull out their phones, open an app, log in, and navigate to today's view. By the time they get there, the moment has passed. The habit doesn't get logged. This Habit Tracker lives in the user's browser toolbar, one click and zero friction. Since most people spend the majority of their day in their browser, keeping the tracker there means it's always visible and accessible. No account, no subscription, no app to download. The data stays on the machine.
+
 The secondary problem is accountability over time. Checking off a box is satisfying; watching a streak grow is motivating. Streaks and progress are made visible at every level, with daily check-ins, weekly patterns, and monthly history.
 
 ---
@@ -48,7 +48,7 @@ The secondary problem is accountability over time. Checking off a box is satisfy
   - Longest streak
   - Total completions
   - 30-day bar chart powered by Recharts
-- Header summary showing today's completion count across all habits
+- Header summary showing active habits, total check-ins, and total streak across all habits
 
 ### Data & Persistence
 - All data stored locally with the Chrome Storage API (`chrome.storage.local`)
@@ -62,35 +62,37 @@ The secondary problem is accountability over time. Checking off a box is satisfy
 | Layer | Technology |
 |---|---|
 | **UI Framework** | React 18 |
+| **Language** | TypeScript 5 |
 | **Extension Platform** | Chrome Manifest V3 |
 | **Drag & Drop** | @hello-pangea/dnd |
 | **Charts** | Recharts |
 | **Date Logic** | date-fns |
 | **Icons** | lucide-react |
-| **Build Tool** | Create React App |
+| **Build Tool** | Vite |
 
 ---
 
 ## Architecture
 
-The app is a single-page React application bundled by Create React App and loaded as a Chrome extension popup.
+The app is a single-page React + TypeScript application bundled by Vite and loaded as a Chrome extension popup.
 
 ```
 [Chrome Toolbar Click]
         ↓
 [popup (build/index.html)]
         ↓
-[React App (App.js)]
+[React App (App.tsx)]
         ↓
+    ├─→ useChromeStorage  — load/save habits via chrome.storage.local
+    ├─→ useStreakCalculator — current & longest streak per habit
     ├─→ Habit state (add / delete / reorder)
     ├─→ Completion toggles per habit per day
-    ├─→ Streak & stats calculation
     └─→ View navigation (daily / weekly / monthly)
         ↓
 [chrome.storage.local]
 ```
 
-State is managed entirely with React hooks (`useState`, `useEffect`, `useCallback`). There is no external state library. The data shape is simple enough that local component state and `chrome.storage` are sufficient.
+State is managed entirely with React hooks (`useState`, `useEffect`, `useCallback`, `useMemo`). There is no external state library. Types are shared across the app via `src/types/index.ts`.
 
 ---
 
@@ -98,7 +100,7 @@ State is managed entirely with React hooks (`useState`, `useEffect`, `useCallbac
 
 ### From Source
 
-**Requirements:** Node.js 16+, npm, Google Chrome
+**Requirements:** Node.js 18+, npm, Google Chrome
 
 ```bash
 # Clone the repository
@@ -128,7 +130,7 @@ The extension will appear in your toolbar. Pin it for quick access.
 To run the app in a regular browser tab during development:
 
 ```bash
-npm start
+npm run dev
 ```
 
 > Note: `chrome.storage` is not available outside the extension context. The app automatically falls back to `localStorage` when running in the browser.
@@ -141,14 +143,38 @@ npm start
 habit-tracker/
 ├── public/
 │   ├── index.html
-│   ├── manifest.json        # Chrome extension manifest (MV3)
+│   ├── manifest.json           # Chrome extension manifest (MV3)
 │   ├── logo16.png
 │   ├── logo48.png
 │   └── logo192.png
 ├── src/
-│   ├── App.js               # Main component (all state, views, and logic)
-│   ├── App.css              # Styles
-│   └── index.js             # React entry point
+│   ├── components/
+│   │   ├── HabitRow.tsx        # Per-habit row with daily/weekly/monthly cells
+│   │   ├── HabitCard.tsx       # Draggable habit card
+│   │   ├── HabitList.tsx       # Drag-and-drop list wrapper
+│   │   ├── Header.tsx          # Top bar with summary stats
+│   │   ├── StatsModal.tsx      # Per-habit stats and 30-day chart
+│   │   └── ViewSwitcher.tsx    # Daily / weekly / monthly tab controls
+│   ├── hooks/
+│   │   ├── useChromeStorage.ts # Chrome storage read/write with localStorage fallback
+│   │   ├── useHabits.ts        # Habit CRUD and reorder logic
+│   │   ├── useStorage.ts       # Generic storage hook
+│   │   └── useStreakCalculator.ts # Current and longest streak computation
+│   ├── pages/
+│   │   └── Dashboard.tsx       # Main view — layout, navigation, modals
+│   ├── services/
+│   │   └── storageService.ts   # Low-level chrome.storage / localStorage adapter
+│   ├── types/
+│   │   └── index.ts            # Shared TypeScript interfaces (Habit, HabitStats, ViewType…)
+│   ├── utils/
+│   │   ├── dateUtils.ts        # Date key formatting and view range helpers
+│   │   ├── statsUtils.ts       # Completion rate and overall stats
+│   │   └── streakUtils.ts      # Streak calculation utilities
+│   ├── App.tsx                 # Root component
+│   ├── App.css                 # Global styles
+│   └── index.tsx               # React entry point
+├── tsconfig.json
+├── vite.config.ts
 └── package.json
 ```
 
@@ -156,22 +182,22 @@ habit-tracker/
 
 ## What This Project Demonstrates
 
-- Packaging a **React app as a Chrome Manifest V3 extension**
+- Packaging a **React + TypeScript app as a Chrome Manifest V3 extension**
 - Working with the **Chrome Storage API** for persistent local data
 - Building a **drag-and-drop UI** with reorder state management
 - Computing **streak logic** from sparse date-keyed records
 - Structuring a **multi-view app** (daily / weekly / monthly) with shared state
 - Integrating **Recharts** for lightweight in-extension data visualization
+- Using **TypeScript** with strict mode for type safety across hooks, components, and utilities
 
 ---
 
 ## Future Improvements
- 
+
 - **Reminder notifications** — using the Chrome Alarms API to remind the user at a set time each day
-- **Habit categories and tags** — grouping related habits and filter by category
+- **Habit categories and tags** — grouping related habits and filtering by category
 - **Goal setting** — defining a weekly target per habit (e.g. 5 out of 7 days) and tracking progress toward it
 - **Export** — downloading history as CSV or JSON
 - **Dark mode** — matching the extension to the system theme
 - **Habit archive** — hiding completed or retired habits without losing their history
 - **Chrome Web Store release** — packaging and publishing so anyone can install with one click
-- **Instead of using JavaScript, using TypeScript** — in order to introduce static typing and catch errors earlier 
