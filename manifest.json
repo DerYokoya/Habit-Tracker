@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Habit Flow Tracker",
+  "name": "Habit Tracker",
   "version": "1.0.0",
   "description": "Beautiful habit tracker with streaks, weekly & monthly views",
   "permissions": ["storage"],
