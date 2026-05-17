@@ -1,0 +1,164 @@
+Habit Tracker
+
+A Chrome extension for building and tracking daily habits with streaks, drag-and-drop reordering, daily/weekly/monthly views, and per-habit statistics. Built with React and packaged as a Manifest V3 Chrome extension.
+
+---
+
+## Screenshots
+
+> *TBA*
+
+---
+
+## Overview
+
+A browser extension that lives in your Chrome toolbar, making habit tracking frictionless and always one click away. It stores all data locally using the Chrome Storage API so your progress is private and persists across sessions.
+
+The goal was to build a genuinely useful productivity tool while exploring how a modern React app can be packaged and deployed as a Chrome extension.
+
+---
+
+## Features
+
+### Habit Management
+- Add and delete habits with a clean modal interface
+- Drag-and-drop reordering via `@hello-pangea/dnd`
+- Color-coded habit rows for quick visual identification
+
+### Views
+- **Daily** — Focus on today's habits with a single-column toggle
+- **Weekly** — See the full week at a glance with day labels
+- **Monthly** — Calendar-style grid showing the entire month
+
+### Streaks & Stats
+- Live current streak displayed per habit with a 🔥 badge
+- Per-habit statistics modal showing:
+  - Current streak
+  - Longest streak
+  - Total completions
+  - 30-day bar chart powered by Recharts
+- Header summary showing today's completion count across all habits
+
+### Data & Persistence
+- All data stored locally with the Chrome Storage API (`chrome.storage.local`)
+- Falls back to `localStorage` for local development
+- No account required, no data leaves your browser
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **UI Framework** | React 18 |
+| **Extension Platform** | Chrome Manifest V3 |
+| **Drag & Drop** | @hello-pangea/dnd |
+| **Charts** | Recharts |
+| **Date Logic** | date-fns |
+| **Icons** | lucide-react |
+| **Build Tool** | Create React App |
+
+---
+
+## Architecture
+
+The app is a single-page React application bundled by Create React App and loaded as a Chrome extension popup.
+
+```
+[Chrome Toolbar Click]
+        ↓
+[popup (build/index.html)]
+        ↓
+[React App (App.js)]
+        ↓
+    ├─→ Habit state (add / delete / reorder)
+    ├─→ Completion toggles per habit per day
+    ├─→ Streak & stats calculation
+    └─→ View navigation (daily / weekly / monthly)
+        ↓
+[chrome.storage.local]
+```
+
+State is managed entirely with React hooks (`useState`, `useEffect`, `useCallback`). There is no external state library — the data shape is simple enough that local component state and `chrome.storage` are sufficient.
+
+---
+
+## Installation
+
+### From Source
+
+**Requirements:** Node.js 16+, npm, Google Chrome
+
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/habit-tracker.git
+cd habit-tracker
+
+# Install dependencies
+npm install
+
+# Build the extension
+npm run build
+```
+
+Then load it into Chrome:
+
+1. Go to `chrome://extensions`
+2. Enable **Developer mode** (top right toggle)
+3. Click **Load unpacked**
+4. Select the `build/` folder
+
+The extension will appear in your toolbar. Pin it for quick access.
+
+---
+
+## Development
+
+To run the app in a regular browser tab during development:
+
+```bash
+npm start
+```
+
+> Note: `chrome.storage` is not available outside the extension context. The app automatically falls back to `localStorage` when running in the browser.
+
+---
+
+## Project Structure
+
+```
+habit-tracker/
+├── public/
+│   ├── index.html
+│   ├── manifest.json        # Chrome extension manifest (MV3)
+│   ├── logo16.png
+│   ├── logo48.png
+│   └── logo192.png
+├── src/
+│   ├── App.js               # Main component — all state, views, and logic
+│   ├── App.css              # Styles
+│   └── index.js             # React entry point
+└── package.json
+```
+
+---
+
+## What This Project Demonstrates
+
+- Packaging a **React app as a Chrome Manifest V3 extension**
+- Working with the **Chrome Storage API** for persistent local data
+- Building a **drag-and-drop UI** with reorder state management
+- Computing **streak logic** from sparse date-keyed records
+- Structuring a **multi-view app** (daily / weekly / monthly) with shared state
+- Integrating **Recharts** for lightweight in-extension data visualization
+
+---
+
+## Future Improvements
+
+- Reminder notifications via the Chrome Alarms API
+- Habit categories and tags
+- Export progress as CSV or JSON
+- Dark mode
+- Habit archive (hide without deleting)
+- Weekly completion rate goal setting
