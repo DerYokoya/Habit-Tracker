@@ -8,7 +8,6 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        // Chrome extensions need predictable single-file output
         manualChunks: undefined,
         entryFileNames: 'static/js/[name].[hash].js',
         chunkFileNames: 'static/js/[name].[hash].js',

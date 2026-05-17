@@ -1,4 +1,8 @@
 /* src/index.css */
+:root {
+  --habit-color: #6366f1;
+}
+
 * {
   margin: 0;
   padding: 0;
