@@ -6,15 +6,26 @@ A Chrome extension for building and tracking daily habits with streaks, drag-and
 
 ## Screenshots
 
-> *TBA*
+<img width="2560" height="1447" alt="react-1" src="https://github.com/user-attachments/assets/fd149f2b-0cbb-49cc-9fe7-b4701e879f08" />
+<img width="2560" height="1458" alt="react-2" src="https://github.com/user-attachments/assets/fe3369ef-adce-4b3a-9aed-e177bf730adb" />
+<img width="2560" height="1441" alt="react-3" src="https://github.com/user-attachments/assets/f35b00a1-bc2a-49b9-9afa-e6de5709191f" />
+<img width="2560" height="1444" alt="react-4" src="https://github.com/user-attachments/assets/75e1684e-8a8d-44c8-b610-0c369cd4cec8" />
 
 ---
 
 ## Overview
 
-A browser extension that lives in your Chrome toolbar, making habit tracking frictionless and always one click away. It stores all data locally using the Chrome Storage API so your progress is private and persists across sessions.
+A browser extension that lives in the Chrome toolbar, making habit tracking always one click away. It stores all data locally using the Chrome Storage API so progress is private and persists across sessions.
 
 The goal was to build a genuinely useful productivity tool while exploring how a modern React app can be packaged and deployed as a Chrome extension.
+
+---
+
+## What Problem This Solves
+ 
+Most habit tracking apps require users to pull out their phones, open an app, log in, and navigate to today's view. By the time they get there, the moment has passed. The habit doesn't get logged. This Habit Tracker lives in the user's browser toolbar, in one click and zero friction. Since most people spend the majority of their day in their browser, keeping the tracker there means it's always visible and accessible. No account, no subscription, no app to download. The data stays on the machine.
+ 
+The secondary problem is accountability over time. Checking off a box is satisfying; watching a streak grow is motivating. Streaks and progress are made visible at every level, with daily check-ins, weekly patterns, and monthly history.
 
 ---
 
@@ -79,7 +90,7 @@ The app is a single-page React application bundled by Create React App and loade
 [chrome.storage.local]
 ```
 
-State is managed entirely with React hooks (`useState`, `useEffect`, `useCallback`). There is no external state library — the data shape is simple enough that local component state and `chrome.storage` are sufficient.
+State is managed entirely with React hooks (`useState`, `useEffect`, `useCallback`). There is no external state library. The data shape is simple enough that local component state and `chrome.storage` are sufficient.
 
 ---
 
@@ -135,7 +146,7 @@ habit-tracker/
 │   ├── logo48.png
 │   └── logo192.png
 ├── src/
-│   ├── App.js               # Main component — all state, views, and logic
+│   ├── App.js               # Main component (all state, views, and logic)
 │   ├── App.css              # Styles
 │   └── index.js             # React entry point
 └── package.json
@@ -155,10 +166,12 @@ habit-tracker/
 ---
 
 ## Future Improvements
-
-- Reminder notifications via the Chrome Alarms API
-- Habit categories and tags
-- Export progress as CSV or JSON
-- Dark mode
-- Habit archive (hide without deleting)
-- Weekly completion rate goal setting
+ 
+- **Reminder notifications** — using the Chrome Alarms API to remind the user at a set time each day
+- **Habit categories and tags** — grouping related habits and filter by category
+- **Goal setting** — defining a weekly target per habit (e.g. 5 out of 7 days) and tracking progress toward it
+- **Export** — downloading history as CSV or JSON
+- **Dark mode** — matching the extension to the system theme
+- **Habit archive** — hiding completed or retired habits without losing their history
+- **Chrome Web Store release** — packaging and publishing so anyone can install with one click
+- **Instead of using JavaScript, using TypeScript** — in order to introduce static typing and catch errors earlier 
