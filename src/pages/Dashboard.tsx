@@ -29,6 +29,14 @@ export const Dashboard: React.FC = () => {
     return { completed, total: habits.length };
   }, [habits]);
 
+  const totalCheckIns = useMemo(() => {
+    return habits.reduce((sum, habit) => sum + Object.values(habit.completions).filter(Boolean).length, 0);
+  }, [habits]);
+
+  const totalStreak = useMemo(() => {
+    return Object.values(habitStats).reduce((sum, s) => sum + s.currentStreak, 0);
+  }, [habitStats]);
+
   const handleToggleHabit = useCallback(async (habitId: string, date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const updatedHabits = habits.map(habit => {
@@ -134,15 +142,24 @@ export const Dashboard: React.FC = () => {
 
       <div className="stats-cards">
         <div className="stat-card">
+          <div className="stat-icon" style={{ color: '#6366f1' }}>🎯</div>
           <div className="stat-info">
-            <div className="stat-value">{todayCompletions.completed}</div>
-            <div className="stat-label">Today</div>
+            <div className="stat-value">{habits.length}</div>
+            <div className="stat-label">Active Habits</div>
           </div>
         </div>
         <div className="stat-card">
+          <div className="stat-icon" style={{ color: '#10b981' }}>📈</div>
           <div className="stat-info">
-            <div className="stat-value">{habits.length}</div>
-            <div className="stat-label">Habits</div>
+            <div className="stat-value">{totalCheckIns}</div>
+            <div className="stat-label">Total Check-ins</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ color: '#f59e0b' }}>🔥</div>
+          <div className="stat-info">
+            <div className="stat-value">{totalStreak}</div>
+            <div className="stat-label">Total Streak</div>
           </div>
         </div>
       </div>

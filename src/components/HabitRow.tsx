@@ -33,11 +33,11 @@ export const HabitRow: React.FC<HabitRowProps> = ({
 
     return (
       <button
-        className="day-cell completed"
+        className={`day-cell ${isCompleted ? 'completed' : ''} ${isToday(currentDate) ? 'today' : ''}`}
         style={{ '--habit-color': habit.color } as React.CSSProperties}
         onClick={() => onToggle(habit.id, currentDate)}
       >
-        {isCompleted ? '✓' : '○'}
+        {format(currentDate, 'd')}
       </button>
     );
   };
@@ -77,8 +77,7 @@ export const HabitRow: React.FC<HabitRowProps> = ({
     const lastDayOfMonth = new Date(year, month + 1, 0);
     const startDay = firstDayOfMonth.getDay();
     const daysInMonth = lastDayOfMonth.getDate();
-    
-    // Adjust for Monday start (0 = Sunday, need 1 = Monday)
+
     const offset = startDay === 0 ? 6 : startDay - 1;
     const totalDays = Math.ceil((offset + daysInMonth) / 7) * 7;
     const days = [];
@@ -89,7 +88,7 @@ export const HabitRow: React.FC<HabitRowProps> = ({
       const isCurrentMonth = dayNumber >= 1 && dayNumber <= daysInMonth;
       const dateStr = format(date, 'yyyy-MM-dd');
       const isCompleted = habit.completions[dateStr] || false;
-      
+
       days.push(
         <button
           key={i}
@@ -108,14 +107,10 @@ export const HabitRow: React.FC<HabitRowProps> = ({
 
   const getViewContent = () => {
     switch (view) {
-      case 'daily':
-        return renderDailyView();
-      case 'weekly':
-        return renderWeeklyView();
-      case 'monthly':
-        return renderMonthlyView();
-      default:
-        return null;
+      case 'daily': return renderDailyView();
+      case 'weekly': return renderWeeklyView();
+      case 'monthly': return renderMonthlyView();
+      default: return null;
     }
   };
 

@@ -1,43 +1,52 @@
 import { useMemo } from 'react';
 import { Habit, HabitStats } from '../types';
-import { eachDayOfInterval, subDays, format, isBefore, startOfDay } from 'date-fns';
+import { subDays, format, startOfDay } from 'date-fns';
 
 export const useStreakCalculator = (habits: Habit[]) => {
   const calculateStreakForHabit = (habit: Habit): HabitStats => {
     const today = startOfDay(new Date());
+    const completions = habit.completions;
+
+    // Count total completions
+    const totalCompletions = Object.values(completions).filter(Boolean).length;
+
+    // Current streak: walk backwards from today (or yesterday if today not done)
     let currentStreak = 0;
-    let longestStreak = 0;
-    let tempStreak = 0;
-    let totalCompletions = 0;
+    const todayStr = format(today, 'yyyy-MM-dd');
+    const yesterdayStr = format(subDays(today, 1), 'yyyy-MM-dd');
+    // Start from today if completed, otherwise from yesterday (grace for habits done yesterday)
+    const startFrom = completions[todayStr] ? 0 : completions[yesterdayStr] ? 1 : null;
 
-    // Get last 365 days of completions
-    const dates = eachDayOfInterval({
-      start: subDays(today, 365),
-      end: today,
-    });
-
-    // Sort dates descending for streak calculation
-    const sortedDates = [...dates].reverse();
-
-    for (const date of sortedDates) {
-      const dateStr = format(date, 'yyyy-MM-dd');
-      const isCompleted = habit.completions[dateStr] || false;
-      
-      if (isCompleted) {
-        totalCompletions++;
-        tempStreak++;
-        longestStreak = Math.max(longestStreak, tempStreak);
-        
-        // Check if this is today or consecutive with today
-        if (format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
-          currentStreak = tempStreak;
-        }
-      } else {
-        // Break streak if not completed and date is before or equal to today
-        if (!isBefore(date, today)) {
-          tempStreak = 0;
+    if (startFrom !== null) {
+      let i = startFrom;
+      while (true) {
+        const dateStr = format(subDays(today, i), 'yyyy-MM-dd');
+        if (completions[dateStr]) {
+          currentStreak++;
+          i++;
+        } else {
+          break;
         }
       }
+    }
+
+    // Longest streak: walk all completion dates sorted ascending
+    const sortedDates = Object.keys(completions)
+      .filter(k => completions[k])
+      .sort();
+
+    let longestStreak = 0;
+    let tempStreak = 0;
+    for (let i = 0; i < sortedDates.length; i++) {
+      if (i === 0) {
+        tempStreak = 1;
+      } else {
+        const prev = new Date(sortedDates[i - 1]);
+        const curr = new Date(sortedDates[i]);
+        const diffDays = Math.round((curr.getTime() - prev.getTime()) / 86400000);
+        tempStreak = diffDays === 1 ? tempStreak + 1 : 1;
+      }
+      longestStreak = Math.max(longestStreak, tempStreak);
     }
 
     return { currentStreak, longestStreak, totalCompletions };
