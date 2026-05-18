@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
-import { Draggable } from '@hello-pangea/dnd';
-import { GripVertical, Trash2, Flame, BarChart3 } from 'lucide-react';
-import { Habit, HabitStats, ViewType } from '../types';
-import { format, isToday, isFuture, startOfDay, startOfWeek, endOfWeek, eachDayOfInterval, getDate } from 'date-fns';
+import React, { useState } from "react";
+import { Draggable } from "@hello-pangea/dnd";
+import { GripVertical, Trash2, Flame, BarChart3, Bell } from "lucide-react";
+import { Habit, HabitStats, ViewType } from "../types";
+import {
+  format,
+  isToday,
+  isFuture,
+  startOfDay,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  getDate,
+} from "date-fns";
 
 interface HabitRowProps {
   habit: Habit;
@@ -13,6 +22,7 @@ interface HabitRowProps {
   onToggle: (habitId: string, date: Date) => void;
   onDelete: (habitId: string) => void;
   onShowStats: (habit: Habit) => void;
+  onSetReminder: (habit: Habit) => void;
 }
 
 export const HabitRow: React.FC<HabitRowProps> = ({
@@ -30,18 +40,18 @@ export const HabitRow: React.FC<HabitRowProps> = ({
   const isFutureDate = (date: Date) => isFuture(startOfDay(date));
 
   const renderDailyView = () => {
-    const dateStr = format(currentDate, 'yyyy-MM-dd');
+    const dateStr = format(currentDate, "yyyy-MM-dd");
     const isCompleted = habit.completions[dateStr] || false;
     const future = isFutureDate(currentDate);
 
     return (
       <button
-        className={`day-cell ${isCompleted ? 'completed' : ''} ${isToday(currentDate) ? 'today' : ''} ${future ? 'future' : ''}`}
-        style={{ '--habit-color': habit.color } as React.CSSProperties}
+        className={`day-cell ${isCompleted ? "completed" : ""} ${isToday(currentDate) ? "today" : ""} ${future ? "future" : ""}`}
+        style={{ "--habit-color": habit.color } as React.CSSProperties}
         onClick={() => !future && onToggle(habit.id, currentDate)}
         disabled={future}
       >
-        {format(currentDate, 'd')}
+        {format(currentDate, "d")}
       </button>
     );
   };
@@ -53,20 +63,20 @@ export const HabitRow: React.FC<HabitRowProps> = ({
 
     return (
       <div className="habit-days">
-        {days.map(day => {
-          const dateStr = format(day, 'yyyy-MM-dd');
+        {days.map((day) => {
+          const dateStr = format(day, "yyyy-MM-dd");
           const isCompleted = habit.completions[dateStr] || false;
           const future = isFutureDate(day);
           return (
             <button
               key={dateStr}
-              className={`day-cell ${isCompleted ? 'completed' : ''} ${isToday(day) ? 'today' : ''} ${future ? 'future' : ''}`}
-              style={{ '--habit-color': habit.color } as React.CSSProperties}
+              className={`day-cell ${isCompleted ? "completed" : ""} ${isToday(day) ? "today" : ""} ${future ? "future" : ""}`}
+              style={{ "--habit-color": habit.color } as React.CSSProperties}
               onClick={() => !future && onToggle(habit.id, day)}
               disabled={future}
             >
               <div className="weekly-cell">
-                <span className="week-day">{format(day, 'EEE')}</span>
+                <span className="week-day">{format(day, "EEE")}</span>
                 <span className="week-date">{getDate(day)}</span>
               </div>
             </button>
@@ -92,32 +102,47 @@ export const HabitRow: React.FC<HabitRowProps> = ({
       const dayNumber = i - offset + 1;
       const date = new Date(year, month, dayNumber);
       const isCurrentMonth = dayNumber >= 1 && dayNumber <= daysInMonth;
-      const dateStr = format(date, 'yyyy-MM-dd');
+      const dateStr = format(date, "yyyy-MM-dd");
       const isCompleted = habit.completions[dateStr] || false;
       const future = isCurrentMonth && isFutureDate(date);
 
       days.push(
         <button
           key={i}
-          className={`day-cell ${isCompleted ? 'completed' : ''} ${isToday(date) ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''} ${future ? 'future' : ''}`}
-          style={{ '--habit-color': habit.color } as React.CSSProperties}
+          className={`day-cell ${isCompleted ? "completed" : ""} ${isToday(date) ? "today" : ""} ${!isCurrentMonth ? "other-month" : ""} ${future ? "future" : ""}`}
+          style={{ "--habit-color": habit.color } as React.CSSProperties}
           onClick={() => isCurrentMonth && !future && onToggle(habit.id, date)}
           disabled={!isCurrentMonth || future}
         >
-          {isCurrentMonth ? dayNumber : ''}
-        </button>
+          {isCurrentMonth ? dayNumber : ""}
+        </button>,
       );
     }
 
-    return <div className="habit-days" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>{days}</div>;
+    return (
+      <div
+        className="habit-days"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, 1fr)",
+          gap: "4px",
+        }}
+      >
+        {days}
+      </div>
+    );
   };
 
   const getViewContent = () => {
     switch (view) {
-      case 'daily': return renderDailyView();
-      case 'weekly': return renderWeeklyView();
-      case 'monthly': return renderMonthlyView();
-      default: return null;
+      case "daily":
+        return renderDailyView();
+      case "weekly":
+        return renderWeeklyView();
+      case "monthly":
+        return renderMonthlyView();
+      default:
+        return null;
     }
   };
 
@@ -127,15 +152,21 @@ export const HabitRow: React.FC<HabitRowProps> = ({
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`habit-row ${snapshot.isDragging ? 'dragging' : ''}`}
-          style={{ borderLeftColor: habit.color, ...provided.draggableProps.style }}
+          className={`habit-row ${snapshot.isDragging ? "dragging" : ""}`}
+          style={{
+            borderLeftColor: habit.color,
+            ...provided.draggableProps.style,
+          }}
         >
           <div className="habit-info">
             <div {...provided.dragHandleProps} className="drag-handle">
               <GripVertical size={16} />
             </div>
             <div className="habit-name" onClick={() => onShowStats(habit)}>
-              <div className="habit-color" style={{ backgroundColor: habit.color }} />
+              <div
+                className="habit-color"
+                style={{ backgroundColor: habit.color }}
+              />
               <span>{habit.name}</span>
               <BarChart3 size={14} color="#94a3b8" />
             </div>
@@ -143,17 +174,43 @@ export const HabitRow: React.FC<HabitRowProps> = ({
               <Flame size={12} />
               <span>{stats.currentStreak}</span>
             </div>
+            <button
+              className="reminder-btn"
+              onClick={() => onSetReminder(habit)}
+              title="Set reminder"
+            >
+              <Bell size={14} />
+            </button>
+
             {showDeleteConfirm ? (
-              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <div
+                style={{ display: "flex", gap: "4px", alignItems: "center" }}
+              >
                 <button
                   onClick={() => onDelete(habit.id)}
-                  style={{ background: '#ef4444', color: 'white', border: 'none', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                  style={{
+                    background: "#ef4444",
+                    color: "white",
+                    border: "none",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    fontSize: "11px",
+                    cursor: "pointer",
+                  }}
                 >
                   Confirm
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  style={{ background: '#94a3b8', color: 'white', border: 'none', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
+                  style={{
+                    background: "#94a3b8",
+                    color: "white",
+                    border: "none",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    fontSize: "11px",
+                    cursor: "pointer",
+                  }}
                 >
                   Cancel
                 </button>

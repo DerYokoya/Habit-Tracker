@@ -7,9 +7,17 @@ export default defineConfig({
     outDir: 'build',
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
+      input: {
+        main: 'index.html',
+        background: 'src/background.ts'
+      },
       output: {
-        manualChunks: undefined,
-        entryFileNames: 'static/js/[name].[hash].js',
+        entryFileNames: (chunkInfo) => {
+          if (chunkInfo.name === 'background') {
+            return 'background.js';
+          }
+          return 'static/js/[name].[hash].js';
+        },
         chunkFileNames: 'static/js/[name].[hash].js',
         assetFileNames: 'static/[ext]/[name].[hash].[ext]',
       },
