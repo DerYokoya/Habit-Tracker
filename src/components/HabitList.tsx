@@ -13,6 +13,9 @@ interface Habit {
 interface Stats {
   [habitId: string]: {
     currentStreak: number;
+    // ? because it's optional. a habitId maybe or may not
+    // have longestStreak / totalComplementions attributes
+    // But it must have a currentStreak attribute
     longestStreak?: number;
     totalCompletions?: number;
   };
