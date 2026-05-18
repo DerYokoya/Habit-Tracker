@@ -25,7 +25,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
     case 'GET_REMINDERS':
       getReminders().then(sendResponse);
-      return true; // Keep channel open for async response
+      return true;
+    case 'COMPLETE_HABIT':
+      completeHabit(message.habitId).then(sendResponse);
+      return true;
     default:
       sendResponse({ success: false });
   }
@@ -46,7 +49,6 @@ async function initializeReminders() {
 function setReminder(habitId: string, time: string) {
   const [hours, minutes] = time.split(':').map(Number);
   
-  // Calculate next occurrence
   const now = new Date();
   const alarmTime = new Date();
   alarmTime.setHours(hours, minutes, 0, 0);
@@ -55,14 +57,13 @@ function setReminder(habitId: string, time: string) {
     alarmTime.setDate(alarmTime.getDate() + 1);
   }
   
-  const periodInMinutes = 24 * 60; // Daily reminder
+  const periodInMinutes = 24 * 60;
   
   chrome.alarms.create(`habit-reminder-${habitId}`, {
     when: alarmTime.getTime(),
     periodInMinutes: periodInMinutes
   });
   
-  // Store reminder config
   chrome.storage.local.get(['reminders']).then((result) => {
     const reminders = result.reminders || {};
     reminders[habitId] = time;
@@ -85,25 +86,64 @@ async function getReminders() {
   return result.reminders || {};
 }
 
+// NEW: Function to complete a habit from notification
+async function completeHabit(habitId: string) {
+  const result = await chrome.storage.local.get(['habits']);
+  const habits = result.habits || [];
+  const todayStr = new Date().toISOString().split('T')[0];
+  
+  const updatedHabits = habits.map((habit: any) => {
+    if (habit.id === habitId) {
+      return {
+        ...habit,
+        completions: {
+          ...habit.completions,
+          [todayStr]: true
+        }
+      };
+    }
+    return habit;
+  });
+  
+  await chrome.storage.local.set({ habits: updatedHabits });
+  
+  // Show confirmation notification
+  chrome.notifications.create({
+    type: 'basic',
+    iconUrl: chrome.runtime.getURL('logo192.png'),
+    title: '✅ Habit Completed!',
+    message: 'Great job! Keep up the streak! 🔥',
+    priority: 1
+  });
+}
+
 function sendReminderNotification(habitId: string) {
-  // Get habit name
   chrome.storage.local.get(['habits']).then((result) => {
     const habits = result.habits || [];
     const habit = habits.find((h: any) => h.id === habitId);
     
     if (habit) {
-      // Check if already completed today
       const todayStr = new Date().toISOString().split('T')[0];
       const alreadyCompleted = habit.completions?.[todayStr] || false;
       
       if (!alreadyCompleted) {
-        chrome.notifications.create({
+        // Store habitId in a way we can retrieve it
+        const notificationId = `habit-reminder-${habitId}-${Date.now()}`;
+        
+        chrome.notifications.create(notificationId, {
           type: 'basic',
-          iconUrl: 'logo128.png',
+          iconUrl: chrome.runtime.getURL('logo192.png'),
           title: 'Habit Reminder 🎯',
           message: `Don't forget to "${habit.name}" today!`,
           priority: 2,
           buttons: [{ title: 'Mark Complete' }, { title: 'Dismiss' }]
+        });
+        
+        // Store mapping from notification ID to habit ID
+        chrome.storage.local.get(['notificationMap']).then((mapResult) => {
+          const map = mapResult.notificationMap || {};
+          map[notificationId] = habitId;
+          chrome.storage.local.set({ notificationMap: map });
         });
       }
     }
@@ -113,7 +153,36 @@ function sendReminderNotification(habitId: string) {
 // Handle notification button clicks
 chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
   if (buttonIndex === 0) {
-    // Open popup to mark complete
-    chrome.action.openPopup();
+    // Get habit ID from stored mapping
+    chrome.storage.local.get(['notificationMap']).then((mapResult) => {
+      const map = mapResult.notificationMap || {};
+      const habitId = map[notificationId];
+      
+      if (habitId) {
+        // Complete the habit
+        completeHabit(habitId);
+        
+        // Clean up the mapping
+        delete map[notificationId];
+        chrome.storage.local.set({ notificationMap: map });
+      }
+      
+      // Close the notification
+      chrome.notifications.clear(notificationId);
+    });
+  } else {
+    // Just close the notification on dismiss
+    chrome.notifications.clear(notificationId);
   }
+});
+
+// Clean up old notification mappings when notification is closed
+chrome.notifications.onClosed.addListener((notificationId) => {
+  chrome.storage.local.get(['notificationMap']).then((mapResult) => {
+    const map = mapResult.notificationMap || {};
+    if (map[notificationId]) {
+      delete map[notificationId];
+      chrome.storage.local.set({ notificationMap: map });
+    }
+  });
 });

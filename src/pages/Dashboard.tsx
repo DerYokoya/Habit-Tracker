@@ -17,6 +17,7 @@ import {
   Settings,
   Download,
   Upload,
+  Bell,
   X,
 } from "lucide-react";
 import {
@@ -32,7 +33,6 @@ import { useStreakCalculator } from "../hooks/useStreakCalculator";
 import { HabitRow } from "../components/HabitRow";
 import { StatsModal } from "../components/StatsModal";
 import { Habit, ViewType } from "../types";
-import { Bell } from "lucide-react";
 import { ReminderSettings } from "../components/ReminderSettings";
 
 const COLORS = [
@@ -259,6 +259,26 @@ export const Dashboard: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showSettingsMenu]);
+
+  // Add near other useEffects
+  useEffect(() => {
+    // Listen for storage changes (when background marks habit complete)
+    const handleStorageChange = (changes: any, areaName: string) => {
+      if (areaName === "local" && changes.habits) {
+        loadData(); // Reload habits
+      }
+    };
+
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      chrome.storage.onChanged.addListener(handleStorageChange);
+    }
+
+    return () => {
+      if (typeof chrome !== "undefined" && chrome.storage) {
+        chrome.storage.onChanged.removeListener(handleStorageChange);
+      }
+    };
+  }, [loadData]);
 
   if (loading) {
     return (
@@ -526,3 +546,4 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
+
