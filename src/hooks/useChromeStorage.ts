@@ -65,28 +65,9 @@ export const useChromeStorage = () => {
     }
   }, []);
 
-  // Listen for external changes (like from background script)
-  useEffect(() => {
-    const handleStorageChange = (changes: any, areaName: string) => {
-      if (areaName === 'local' && changes.habits) {
-        setHabits(changes.habits.newValue);
-      }
-    };
-
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.onChanged.addListener(handleStorageChange);
-    }
-
-    return () => {
-      if (typeof chrome !== 'undefined' && chrome.storage) {
-        chrome.storage.onChanged.removeListener(handleStorageChange);
-      }
-    };
-  }, []);
-
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  return { habits, saveHabits, loading, loadData };
+  return { habits, saveHabits, loading };
 };

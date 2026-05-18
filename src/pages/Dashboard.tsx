@@ -34,6 +34,7 @@ import { HabitRow } from "../components/HabitRow";
 import { StatsModal } from "../components/StatsModal";
 import { Habit, ViewType } from "../types";
 import { ReminderSettings } from "../components/ReminderSettings";
+import { loadData } from "../services/storageService";
 
 const COLORS = [
   "#6366f1",
@@ -260,7 +261,6 @@ export const Dashboard: React.FC = () => {
     };
   }, [showSettingsMenu]);
 
-  // Add near other useEffects
   useEffect(() => {
     // Listen for storage changes (when background marks habit complete)
     const handleStorageChange = (changes: any, areaName: string) => {
