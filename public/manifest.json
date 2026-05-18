@@ -2,8 +2,11 @@
   "manifest_version": 3,
   "name": "Habit Tracker",
   "version": "1.0.0",
-  "description": "Beautiful habit tracker with streaks, weekly & monthly views",
-  "permissions": ["storage"],
+  "description": "Beautiful habit tracker with streaks, weekly & monthly views, and smart reminders",
+  "permissions": ["storage", "alarms", "notifications"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "index.html",
     "default_icon": {
