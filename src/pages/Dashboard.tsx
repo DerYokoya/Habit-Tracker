@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
-import { Plus, Calendar, CalendarDays, LayoutGrid, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Plus, Calendar, CalendarDays, LayoutGrid, ChevronLeft, ChevronRight, Sparkles, Settings, Download, Upload, X } from 'lucide-react';
 import { format, addDays, subDays, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { useChromeStorage } from '../hooks/useChromeStorage';
 import { useStreakCalculator } from '../hooks/useStreakCalculator';
@@ -19,6 +19,9 @@ export const Dashboard: React.FC = () => {
   const [newHabitName, setNewHabitName] = useState('');
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const todayCompletions = useMemo(() => {
     const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -119,6 +122,78 @@ export const Dashboard: React.FC = () => {
     setShowStatsModal(true);
   };
 
+  const handleExport = useCallback(() => {
+    const dataStr = JSON.stringify(habits, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `habit-tracker-backup-${format(new Date(), 'yyyy-MM-dd')}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setShowSettingsMenu(false);
+  }, [habits]);
+
+  const handleImportClick = useCallback(() => {
+    setShowImportConfirm(true);
+    setShowSettingsMenu(false);
+  }, []);
+
+  const handleImportConfirm = useCallback(() => {
+    fileInputRef.current?.click();
+    setShowImportConfirm(false);
+  }, []);
+
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const importedHabits = JSON.parse(text) as Habit[];
+      
+      if (!Array.isArray(importedHabits)) {
+        throw new Error('Invalid format: expected an array of habits');
+      }
+
+      const validHabits = importedHabits.filter(h => 
+        h.id && h.name && typeof h.completions === 'object'
+      );
+
+      if (validHabits.length === 0) {
+        throw new Error('No valid habits found in file');
+      }
+
+      await saveHabits(validHabits);
+    } catch (error) {
+      console.error('Import failed:', error);
+      alert('Import failed. Please check the file format and try again.');
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [saveHabits]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.settings-container')) {
+        setShowSettingsMenu(false);
+      }
+    };
+
+    if (showSettingsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSettingsMenu]);
+
   if (loading) {
     return (
       <div className="app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '600px' }}>
@@ -134,9 +209,32 @@ export const Dashboard: React.FC = () => {
           <Sparkles size={24} />
           <h1>Habit Tracker</h1>
         </div>
-        <div className="stats-badge">
-          <Calendar size={14} />
-          <span>{todayCompletions.completed}/{todayCompletions.total}</span>
+        <div className="header-actions">
+          <div className="stats-badge">
+            <Calendar size={14} />
+            <span>{todayCompletions.completed}/{todayCompletions.total}</span>
+          </div>
+          <div className="settings-container">
+            <button 
+              className="settings-btn" 
+              onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+              title="Settings"
+            >
+              <Settings size={20} />
+            </button>
+            {showSettingsMenu && (
+              <div className="settings-dropdown">
+                <button className="settings-item" onClick={handleExport}>
+                  <Download size={16} />
+                  Export JSON
+                </button>
+                <button className="settings-item" onClick={handleImportClick}>
+                  <Upload size={16} />
+                  Import JSON
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -256,6 +354,32 @@ export const Dashboard: React.FC = () => {
           }}
         />
       )}
+
+      {showImportConfirm && (
+        <div className="modal-overlay" onClick={() => setShowImportConfirm(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Import Habits</h3>
+              <button onClick={() => setShowImportConfirm(false)}><X size={16} /></button>
+            </div>
+            <p style={{ color: '#666', marginBottom: '20px' }}>
+              This will replace all your current habits with the imported data. This action cannot be undone.
+            </p>
+            <div className="modal-actions">
+              <button className="cancel-btn" onClick={() => setShowImportConfirm(false)}>Cancel</button>
+              <button className="create-btn" onClick={handleImportConfirm}>Import</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
     </div>
   );
 };
