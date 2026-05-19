@@ -19,6 +19,7 @@ import {
   Upload,
   Bell,
   X,
+  FileText,
 } from "lucide-react";
 import {
   format,
@@ -35,6 +36,7 @@ import { StatsModal } from "../components/StatsModal";
 import { Habit, ViewType } from "../types";
 import { ReminderSettings } from "../components/ReminderSettings";
 import { loadData } from "../services/storageService";
+import { CSVExportModal } from "../components/CSVExportModal";
 
 const COLORS = [
   "#6366f1",
@@ -61,6 +63,7 @@ export const Dashboard: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [reminderHabit, setReminderHabit] = useState<Habit | null>(null);
+  const [showCSVModal, setShowCSVModal] = useState(false);
 
   const todayCompletions = useMemo(() => {
     const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -195,6 +198,14 @@ export const Dashboard: React.FC = () => {
     setShowSettingsMenu(false);
   }, [habits]);
 
+  const handleCSVImport = useCallback(
+    async (importedHabits: Habit[]) => {
+      await saveHabits(importedHabits);
+      setShowCSVModal(false);
+    },
+    [saveHabits],
+  );
+
   const handleImportClick = useCallback(() => {
     setShowImportConfirm(true);
     setShowSettingsMenu(false);
@@ -324,6 +335,16 @@ export const Dashboard: React.FC = () => {
                   <Download size={16} />
                   Export JSON
                 </button>
+                <button
+                  className="settings-item"
+                  onClick={() => {
+                    setShowCSVModal(true);
+                    setShowSettingsMenu(false);
+                  }}
+                >
+                  <FileText size={16} />
+                  CSV Import/Export
+                </button>
                 <button className="settings-item" onClick={handleImportClick}>
                   <Upload size={16} />
                   Import JSON
@@ -332,6 +353,13 @@ export const Dashboard: React.FC = () => {
             )}
           </div>
         </div>
+        {showCSVModal && (
+          <CSVExportModal
+            habits={habits}
+            onClose={() => setShowCSVModal(false)}
+            onImport={handleCSVImport}
+          />
+        )}
       </div>
 
       <div className="stats-cards">
@@ -546,4 +574,3 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
-
