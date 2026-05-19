@@ -1,0 +1,291 @@
+/* Import/Export Modal */
+.import-export-modal {
+  max-width: var(--import-modal-max-width);
+  width: 90%;
+}
+
+/* Tabs */
+.ie-tabs,
+.csv-tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-2xl);
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: var(--spacing-sm);
+}
+
+.ie-tab,
+.csv-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px var(--spacing-md);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-light);
+  transition: all var(--transition-normal);
+}
+
+.ie-tab.active,
+.csv-tab.active {
+  background: var(--primary-gradient);
+  color: var(--text-white);
+}
+
+.ie-tab:hover:not(.active),
+.csv-tab:hover:not(.active) {
+  background: var(--bg-hover);
+}
+
+/* Info text */
+.ie-info,
+.csv-info {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin-bottom: var(--spacing-xl);
+  line-height: 1.5;
+}
+
+/* Format section */
+.ie-format-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.ie-format-section h4 {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-bottom: var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ie-format-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: 14px;
+  background: var(--bg-gray);
+  border-radius: 14px;
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-normal);
+}
+
+.ie-format-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-hover);
+}
+
+.ie-format-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ie-format-info strong {
+  font-size: 0.85rem;
+  color: var(--text-dark);
+}
+
+.ie-format-info span {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+/* Export buttons */
+.ie-export-json-btn,
+.ie-export-csv-btn,
+.export-btn,
+.import-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.ie-export-json-btn {
+  background: var(--info);
+  color: var(--text-white);
+}
+
+.ie-export-json-btn:hover,
+.ie-export-csv-btn:hover,
+.export-btn:hover,
+.import-btn:hover {
+  transform: translateY(-1px);
+}
+
+.ie-export-csv-btn,
+.export-btn {
+  background: var(--success);
+  color: var(--text-white);
+}
+
+.ie-export-csv-btn:hover,
+.export-btn:hover {
+  background: var(--success-dark);
+}
+
+.import-btn {
+  background: var(--primary-gradient);
+  color: var(--text-white);
+}
+
+/* Export preview */
+.export-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: #eef2ff;
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-lg);
+  color: #4338ca;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Format selector */
+.ie-format-selector {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+  background: var(--bg-hover);
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-md);
+}
+
+.ie-format-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: var(--spacing-sm);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-light);
+  transition: all var(--transition-normal);
+}
+
+.ie-format-btn.active {
+  background: var(--bg-white);
+  color: var(--primary-1);
+  box-shadow: var(--shadow-sm);
+}
+
+/* JSON import */
+.ie-json-import-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: 30px var(--spacing-xl);
+  background: var(--bg-gray);
+  border-radius: var(--radius-lg);
+  border: 2px dashed var(--border-hover);
+  text-align: center;
+}
+
+.ie-json-import-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.ie-json-import-text strong {
+  font-size: 0.9rem;
+  color: var(--text-dark);
+}
+
+.ie-json-import-text span {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+.ie-upload-btn,
+.csv-upload-label,
+.ie-upload-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-xl);
+  background: var(--primary-gradient);
+  color: var(--text-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: transform var(--transition-normal);
+}
+
+.ie-upload-btn:hover,
+.csv-upload-label:hover,
+.ie-upload-label:hover {
+  transform: translateY(-1px);
+}
+
+/* CSV import */
+.ie-csv-textarea,
+.csv-textarea {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+  resize: vertical;
+  margin-bottom: var(--spacing-lg);
+}
+
+.ie-csv-textarea:focus,
+.csv-textarea:focus {
+  outline: none;
+  border-color: var(--primary-1);
+}
+
+.ie-csv-actions,
+.csv-import-actions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+/* Messages */
+.ie-error,
+.csv-error {
+  margin-top: var(--spacing-lg);
+  padding: 10px;
+  background: var(--error-light);
+  color: var(--error);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.ie-success,
+.csv-success {
+  margin-top: var(--spacing-lg);
+  padding: 10px;
+  background: #d1fae5;
+  color: var(--success-dark);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  text-align: center;
+}
