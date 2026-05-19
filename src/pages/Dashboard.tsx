@@ -36,7 +36,7 @@ import { StatsModal } from "../components/StatsModal";
 import { Habit, ViewType } from "../types";
 import { ReminderSettings } from "../components/ReminderSettings";
 import { loadData } from "../services/storageService";
-import { CSVExportModal } from "../components/CSVExportModal";
+import { ImportExportModal } from "../components/ImportExportModal";
 
 const COLORS = [
   "#6366f1",
@@ -59,11 +59,11 @@ export const Dashboard: React.FC = () => {
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-  const [showImportConfirm, setShowImportConfirm] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [reminderHabit, setReminderHabit] = useState<Habit | null>(null);
-  const [showCSVModal, setShowCSVModal] = useState(false);
+  const [showImportExportModal, setShowImportExportModal] = useState(false);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const todayCompletions = useMemo(() => {
     const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -198,10 +198,50 @@ export const Dashboard: React.FC = () => {
     setShowSettingsMenu(false);
   }, [habits]);
 
+  const handleExportJSON = useCallback(() => {
+    const dataStr = JSON.stringify(habits, null, 2);
+    const dataBlob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `habit-tracker-backup-${format(new Date(), "yyyy-MM-dd")}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [habits]);
+
+  const handleImportJSON = useCallback(
+    async (file: File) => {
+      const text = await file.text();
+      const importedHabits = JSON.parse(text) as Habit[];
+
+      if (!Array.isArray(importedHabits)) {
+        throw new Error("Invalid format: expected an array of habits");
+      }
+
+      const validHabits = importedHabits.filter(
+        (h) => h.id && h.name && typeof h.completions === "object",
+      );
+
+      if (validHabits.length === 0) {
+        throw new Error("No valid habits found in file");
+      }
+
+      if (
+        window.confirm(
+          `Import ${validHabits.length} habits? This will replace all current habits.`,
+        )
+      ) {
+        await saveHabits(validHabits);
+      }
+    },
+    [saveHabits],
+  );
+
   const handleCSVImport = useCallback(
     async (importedHabits: Habit[]) => {
       await saveHabits(importedHabits);
-      setShowCSVModal(false);
     },
     [saveHabits],
   );
@@ -331,35 +371,33 @@ export const Dashboard: React.FC = () => {
             </button>
             {showSettingsMenu && (
               <div className="settings-dropdown">
-                <button className="settings-item" onClick={handleExport}>
-                  <Download size={16} />
-                  Export JSON
-                </button>
                 <button
                   className="settings-item"
                   onClick={() => {
-                    setShowCSVModal(true);
+                    setShowImportExportModal(true);
                     setShowSettingsMenu(false);
                   }}
                 >
-                  <FileText size={16} />
-                  CSV Import/Export
+                  <Download size={16} />
+                  Import / Export
                 </button>
                 <button className="settings-item" onClick={handleImportClick}>
                   <Upload size={16} />
-                  Import JSON
+                  Import JSON (Legacy)
                 </button>
               </div>
             )}
+            {showImportExportModal && (
+              <ImportExportModal
+                habits={habits}
+                onClose={() => setShowImportExportModal(false)}
+                onImport={handleCSVImport}
+                onExportJSON={handleExportJSON}
+                onImportJSON={handleImportJSON}
+              />
+            )}
           </div>
         </div>
-        {showCSVModal && (
-          <CSVExportModal
-            habits={habits}
-            onClose={() => setShowCSVModal(false)}
-            onImport={handleCSVImport}
-          />
-        )}
       </div>
 
       <div className="stats-cards">
