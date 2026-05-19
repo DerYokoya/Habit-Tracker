@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Download, Upload, FileText, X } from 'lucide-react';
 import { Habit } from '../types';
+import { format } from "date-fns";
 
 interface CSVExportModalProps {
   habits: Habit[];

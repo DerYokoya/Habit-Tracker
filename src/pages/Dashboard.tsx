@@ -192,19 +192,63 @@ export const Dashboard: React.FC = () => {
     return {};
   }, []);
 
-  const handleExport = useCallback(() => {
-    const dataStr = JSON.stringify(habits, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `habit-tracker-backup-${format(new Date(), "yyyy-MM-dd")}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    setShowSettingsMenu(false);
-  }, [habits]);
+const handleExportCSV = useCallback(async () => {
+  // Prepare CSV data
+  const csvRows = [];
+  
+  // Headers
+  csvRows.push(['Habit Name', 'Habit ID', 'Color', 'Date', 'Completed', 'Reminder Time'].join(','));
+  
+  // Get reminders
+  const reminders = await getReminders();
+  
+  // For each habit, export all completions
+  for (const habit of habits) {
+    const completions = habit.completions;
+    const reminderTime = reminders[habit.id] || '';
+    
+    // Get all dates with completions
+    const completionEntries = Object.entries(completions);
+    
+    if (completionEntries.length === 0) {
+      // Export habit with no completions
+      csvRows.push([
+        `"${habit.name}"`,
+        habit.id,
+        habit.color,
+        '',
+        'false',
+        reminderTime
+      ].join(','));
+    } else {
+      // Export each completion date
+      for (const [date, completed] of completionEntries) {
+        csvRows.push([
+          `"${habit.name}"`,
+          habit.id,
+          habit.color,
+          date,
+          completed ? 'true' : 'false',
+          reminderTime
+        ].join(','));
+      }
+    }
+  }
+  
+  // Create and download CSV file
+  const csvContent = csvRows.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `habit-tracker-export-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  
+  setShowSettingsMenu(false);
+}, [habits, getReminders]);
 
   const handleExportJSON = useCallback(async () => {
     const reminders = await getReminders();

@@ -1,6 +1,7 @@
 // src/components/ImportExportModal.tsx
 import React, { useState, useRef, useEffect } from "react";
 import { Download, Upload, FileText, X, FileJson, Table } from "lucide-react";
+import { format } from "date-fns";
 import { Habit } from "../types";
 
 interface ImportExportModalProps {
@@ -29,7 +30,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
   const [csvText, setCsvText] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [importType, setImportType] = useState<"json" | "csv">("csv");
+  const [importType, setImportType] = useState<"json" | "csv">("json"); // ← Fixed: default to json
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasExistingReminders, setHasExistingReminders] = useState(false);
 
@@ -45,7 +46,6 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
   }, []);
 
   // Convert habits to CSV
-  // Updated habitsToCSV function - only add Reminder Time column if there are any reminders
   const habitsToCSV = (
     habits: Habit[],
     reminders: Record<string, string>,
@@ -97,7 +97,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
     }
 
     const headers = parseCSVLine(lines[0]);
-    // Check if Reminder Time column exists (not just the string, but actually present)
+    // Check if Reminder Time column exists
     const hasReminderColumn = headers.includes("Reminder Time");
     const reminderColumnIndex = hasReminderColumn
       ? headers.indexOf("Reminder Time")
@@ -158,39 +158,6 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
     return { habits, reminders };
   };
 
-  const handleImportCSV = async () => {
-    try {
-      setError("");
-      const { habits: importedHabits, reminders: importedReminders } =
-        csvToHabits(csvText);
-
-      const reminderCount = Object.keys(importedReminders).length;
-
-      let message = "";
-      if (reminderCount > 0 && hasExistingReminders) {
-        message = `Import will replace ${Object.keys(importedReminders).length} existing reminder setting(s). Continue?`;
-      } else if (reminderCount > 0) {
-        message = `Import ${importedHabits.length} habits with ${reminderCount} reminder setting(s)?`;
-      } else if (hasExistingReminders) {
-        message = `Import ${importedHabits.length} habits. WARNING: This will REMOVE all your existing reminder settings (${Object.keys(importedReminders).length} reminders found in backup). Continue?`;
-      } else {
-        message = `Import ${importedHabits.length} habits (no reminder settings affected)?`;
-      }
-
-      if (window.confirm(message)) {
-        await onImport(importedHabits, importedReminders);
-        setSuccess(
-          `CSV import successful! ${reminderCount > 0 ? `Imported ${reminderCount} reminder setting(s).` : "No reminder settings were imported."}`,
-        );
-        setTimeout(() => {
-          onClose();
-        }, 1500);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to parse CSV");
-    }
-  };
-
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];
     let inQuotes = false;
@@ -233,19 +200,34 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
   };
 
   const handleExportCSV = () => {
-    const csv = habitsToCSV(habits, reminders);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const csvContent = habitsToCSV(habits, reminders);
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `habit-tracker-${new Date().toISOString().split("T")[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `habits-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
     URL.revokeObjectURL(url);
+  };
 
-    setSuccess("CSV export complete!");
-    setTimeout(() => setSuccess(""), 2000);
+  const handleImportCSV = async () => {
+    if (!csvText.trim()) {
+      setError("Please paste CSV data or upload a CSV file");
+      return;
+    }
+
+    try {
+      const { habits: importedHabits, reminders: importedReminders } =
+        csvToHabits(csvText);
+      
+      await onImport(importedHabits, importedReminders);
+      setSuccess(`Successfully imported ${importedHabits.length} habits!`);
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to import CSV");
+    }
   };
 
   const handleJSONFileUpload = async (
@@ -439,7 +421,10 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
                       style={{ display: "none" }}
                     />
                   </label>
-                  <button className="ie-import-btn" onClick={handleImportCSV}>
+                  <button 
+                    className="ie-import-btn" 
+                    onClick={handleImportCSV}
+                  >
                     <Upload size={16} /> Import CSV
                   </button>
                 </div>
