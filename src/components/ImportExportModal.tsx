@@ -1,5 +1,5 @@
 // src/components/ImportExportModal.tsx
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Download, Upload, FileText, X, FileJson, Table } from "lucide-react";
 import { Habit } from "../types";
 
@@ -31,8 +31,21 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
   const [success, setSuccess] = useState("");
   const [importType, setImportType] = useState<"json" | "csv">("csv");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [hasExistingReminders, setHasExistingReminders] = useState(false);
+
+  useEffect(() => {
+    const checkReminders = async () => {
+      if (typeof chrome !== "undefined" && chrome.storage) {
+        const result = await chrome.storage.local.get(["reminders"]);
+        const existingReminders = result.reminders || {};
+        setHasExistingReminders(Object.keys(existingReminders).length > 0);
+      }
+    };
+    checkReminders();
+  }, []);
 
   // Convert habits to CSV
+  // Updated habitsToCSV function - only add Reminder Time column if there are any reminders
   const habitsToCSV = (
     habits: Habit[],
     reminders: Record<string, string>,
@@ -43,23 +56,25 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
     });
     const sortedDates = Array.from(allDates).sort();
 
-    // Create header row
-    const headers = [
-      "Habit ID",
-      "Habit Name",
-      "Color",
-      "Reminder Time",
-      ...sortedDates,
-    ];
+    // Check if there are any reminders set
+    const hasAnyReminders = Object.keys(reminders).length > 0;
 
-    // Create data rows
+    // Only add Reminder Time column if there are reminders
+    const headers = hasAnyReminders
+      ? ["Habit ID", "Habit Name", "Color", "Reminder Time", ...sortedDates]
+      : ["Habit ID", "Habit Name", "Color", ...sortedDates];
+
     const rows = habits.map((habit) => {
       const row: string[] = [
         habit.id,
-        `"${habit.name.replace(/"/g, '""')}"`, // Escape quotes
+        `"${habit.name.replace(/"/g, '""')}"`,
         habit.color,
-        reminders[habit.id] || "",
       ];
+
+      // Only add reminder time if there are any reminders
+      if (hasAnyReminders) {
+        row.push(reminders[habit.id] || "");
+      }
 
       sortedDates.forEach((date) => {
         const completed = habit.completions[date] || false;
@@ -81,8 +96,8 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
       throw new Error("CSV must have at least a header row and one data row");
     }
 
-    // Parse header
     const headers = parseCSVLine(lines[0]);
+    // Check if Reminder Time column exists (not just the string, but actually present)
     const hasReminderColumn = headers.includes("Reminder Time");
     const reminderColumnIndex = hasReminderColumn
       ? headers.indexOf("Reminder Time")
@@ -90,24 +105,33 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
     const dateColumns = headers.slice(hasReminderColumn ? 4 : 3);
 
     const habits: Habit[] = [];
+    const reminders: Record<string, string> = {};
 
-    // Parse data rows
     for (let i = 1; i < lines.length; i++) {
       if (!lines[i].trim()) continue;
 
       const values = parseCSVLine(lines[i]);
       if (values.length < 3) continue;
 
+      const habitId = values[0];
       const habit: Habit = {
-        id: values[0] || Date.now().toString() + i,
+        id: habitId || Date.now().toString() + i,
         name: values[1].replace(/^"|"$/g, "").replace(/""/g, '"'),
         color: values[2] || getRandomColor(),
         completions: {},
       };
 
-      // Extract reminder if column exists
-      if (hasReminderColumn && values[reminderColumnIndex]) {
-        reminders[habit.id] = values[reminderColumnIndex];
+      // Only extract reminder if column exists AND has a non-empty value
+      if (
+        hasReminderColumn &&
+        values[reminderColumnIndex] &&
+        values[reminderColumnIndex].trim()
+      ) {
+        const reminderTime = values[reminderColumnIndex].trim();
+        // Validate it looks like a time (HH:MM format)
+        if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(reminderTime)) {
+          reminders[habit.id] = reminderTime;
+        }
       }
 
       // Parse completion data
@@ -132,6 +156,39 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
     }
 
     return { habits, reminders };
+  };
+
+  const handleImportCSV = async () => {
+    try {
+      setError("");
+      const { habits: importedHabits, reminders: importedReminders } =
+        csvToHabits(csvText);
+
+      const reminderCount = Object.keys(importedReminders).length;
+
+      let message = "";
+      if (reminderCount > 0 && hasExistingReminders) {
+        message = `Import will replace ${Object.keys(importedReminders).length} existing reminder setting(s). Continue?`;
+      } else if (reminderCount > 0) {
+        message = `Import ${importedHabits.length} habits with ${reminderCount} reminder setting(s)?`;
+      } else if (hasExistingReminders) {
+        message = `Import ${importedHabits.length} habits. WARNING: This will REMOVE all your existing reminder settings (${Object.keys(importedReminders).length} reminders found in backup). Continue?`;
+      } else {
+        message = `Import ${importedHabits.length} habits (no reminder settings affected)?`;
+      }
+
+      if (window.confirm(message)) {
+        await onImport(importedHabits, importedReminders);
+        setSuccess(
+          `CSV import successful! ${reminderCount > 0 ? `Imported ${reminderCount} reminder setting(s).` : "No reminder settings were imported."}`,
+        );
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to parse CSV");
+    }
   };
 
   const parseCSVLine = (line: string): string[] => {
@@ -189,28 +246,6 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
 
     setSuccess("CSV export complete!");
     setTimeout(() => setSuccess(""), 2000);
-  };
-
-  const handleImportCSV = async () => {
-    try {
-      setError("");
-      const { habits: importedHabits, reminders: importedReminders } =
-        csvToHabits(csvText);
-
-      if (
-        window.confirm(
-          `Import ${importedHabits.length} habits with ${Object.keys(importedReminders).length} reminder settings? This will replace all current data.`,
-        )
-      ) {
-        await onImport(importedHabits, importedReminders);
-        setSuccess("CSV import successful!");
-        setTimeout(() => {
-          onClose();
-        }, 1500);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to parse CSV");
-    }
   };
 
   const handleJSONFileUpload = async (
