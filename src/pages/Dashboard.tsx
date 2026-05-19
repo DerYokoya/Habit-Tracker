@@ -64,6 +64,18 @@ export const Dashboard: React.FC = () => {
   const [showImportExportModal, setShowImportExportModal] = useState(false);
   const [showImportConfirm, setShowImportConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [reminders, setReminders] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const loadReminders = async () => {
+      if (typeof chrome !== "undefined" && chrome.storage) {
+        const result = await chrome.storage.local.get(["reminders"]);
+        setReminders(result.reminders || {});
+      }
+    };
+
+    loadReminders();
+  }, []);
 
   const todayCompletions = useMemo(() => {
     const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -185,70 +197,13 @@ export const Dashboard: React.FC = () => {
   };
 
   const getReminders = useCallback(async () => {
-    if (typeof chrome !== "undefined" && chrome.storage) {
-      const result = await chrome.storage.local.get(["reminders"]);
-      return result.reminders || {};
-    }
-    return {};
-  }, []);
-
-const handleExportCSV = useCallback(async () => {
-  // Prepare CSV data
-  const csvRows = [];
-  
-  // Headers
-  csvRows.push(['Habit Name', 'Habit ID', 'Color', 'Date', 'Completed', 'Reminder Time'].join(','));
-  
-  // Get reminders
-  const reminders = await getReminders();
-  
-  // For each habit, export all completions
-  for (const habit of habits) {
-    const completions = habit.completions;
-    const reminderTime = reminders[habit.id] || '';
-    
-    // Get all dates with completions
-    const completionEntries = Object.entries(completions);
-    
-    if (completionEntries.length === 0) {
-      // Export habit with no completions
-      csvRows.push([
-        `"${habit.name}"`,
-        habit.id,
-        habit.color,
-        '',
-        'false',
-        reminderTime
-      ].join(','));
-    } else {
-      // Export each completion date
-      for (const [date, completed] of completionEntries) {
-        csvRows.push([
-          `"${habit.name}"`,
-          habit.id,
-          habit.color,
-          date,
-          completed ? 'true' : 'false',
-          reminderTime
-        ].join(','));
-      }
-    }
+  if (typeof chrome !== "undefined" && chrome.storage) {
+    const result = await chrome.storage.local.get(["reminders"]);
+    setReminders(result.reminders || {});
+    return result.reminders || {};
   }
-  
-  // Create and download CSV file
-  const csvContent = csvRows.join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `habit-tracker-export-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-  
-  setShowSettingsMenu(false);
-}, [habits, getReminders]);
+  return {};
+}, []);
 
   const handleExportJSON = useCallback(async () => {
     const reminders = await getReminders();
@@ -339,6 +294,7 @@ const handleExportCSV = useCallback(async () => {
           });
 
           await chrome.storage.local.set({ reminders });
+          setReminders(reminders);
         }
       }
     },
@@ -398,6 +354,7 @@ const handleExportCSV = useCallback(async () => {
         });
 
         await chrome.storage.local.set({ reminders });
+        setReminders(reminders);
       }
     },
     [saveHabits],
@@ -547,6 +504,7 @@ const handleExportCSV = useCallback(async () => {
             {showImportExportModal && (
               <ImportExportModal
                 habits={habits}
+                reminders={reminders}
                 onClose={() => setShowImportExportModal(false)}
                 onImport={handleCSVImport}
                 onExportJSON={handleExportJSON}
