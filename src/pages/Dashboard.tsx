@@ -184,6 +184,14 @@ export const Dashboard: React.FC = () => {
     setShowStatsModal(true);
   };
 
+  const getReminders = useCallback(async () => {
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      const result = await chrome.storage.local.get(["reminders"]);
+      return result.reminders || {};
+    }
+    return {};
+  }, []);
+
   const handleExport = useCallback(() => {
     const dataStr = JSON.stringify(habits, null, 2);
     const dataBlob = new Blob([dataStr], { type: "application/json" });
@@ -198,8 +206,15 @@ export const Dashboard: React.FC = () => {
     setShowSettingsMenu(false);
   }, [habits]);
 
-  const handleExportJSON = useCallback(() => {
-    const dataStr = JSON.stringify(habits, null, 2);
+  const handleExportJSON = useCallback(async () => {
+    const reminders = await getReminders();
+    const exportData = {
+      habits: habits,
+      reminders: reminders,
+      exportDate: new Date().toISOString(),
+      version: "1.0",
+    };
+    const dataStr = JSON.stringify(exportData, null, 2);
     const dataBlob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement("a");
@@ -209,15 +224,28 @@ export const Dashboard: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  }, [habits]);
+  }, [habits, getReminders]);
 
   const handleImportJSON = useCallback(
     async (file: File) => {
       const text = await file.text();
-      const importedHabits = JSON.parse(text) as Habit[];
+      const importData = JSON.parse(text);
 
-      if (!Array.isArray(importedHabits)) {
-        throw new Error("Invalid format: expected an array of habits");
+      // Handle both old format (just habits array) and new format (object with habits and reminders)
+      let importedHabits: Habit[];
+      let importedReminders: Record<string, string> = {};
+
+      if (Array.isArray(importData)) {
+        // Old format - just habits array
+        importedHabits = importData;
+      } else if (importData.habits && Array.isArray(importData.habits)) {
+        // New format with reminders
+        importedHabits = importData.habits;
+        importedReminders = importData.reminders || {};
+      } else {
+        throw new Error(
+          "Invalid format: expected habits array or export object",
+        );
       }
 
       const validHabits = importedHabits.filter(
@@ -230,18 +258,103 @@ export const Dashboard: React.FC = () => {
 
       if (
         window.confirm(
-          `Import ${validHabits.length} habits? This will replace all current habits.`,
+          `Import ${validHabits.length} habits with ${Object.keys(importedReminders).length} reminder settings? This will replace all current data.`,
         )
       ) {
         await saveHabits(validHabits);
+
+        // Restore reminders
+        if (
+          typeof chrome !== "undefined" &&
+          chrome.storage &&
+          Object.keys(importedReminders).length > 0
+        ) {
+          // First clear existing reminders for habits that might be removed
+          const currentReminders = await chrome.storage.local.get([
+            "reminders",
+          ]);
+          const reminders = currentReminders.reminders || {};
+
+          // Remove reminders for habits that no longer exist
+          Object.keys(reminders).forEach((reminderHabitId) => {
+            if (!validHabits.some((h) => h.id === reminderHabitId)) {
+              if (typeof chrome !== "undefined" && chrome.alarms) {
+                chrome.alarms.clear(`habit-reminder-${reminderHabitId}`);
+              }
+              delete reminders[reminderHabitId];
+            }
+          });
+
+          // Add/update imported reminders
+          Object.entries(importedReminders).forEach(([habitId, time]) => {
+            reminders[habitId] = time;
+            // Recreate the alarm
+            if (typeof chrome !== "undefined" && chrome.alarms && time) {
+              setReminderAlarm(habitId, time as string);
+            }
+          });
+
+          await chrome.storage.local.set({ reminders });
+        }
       }
     },
     [saveHabits],
   );
 
+  // Helper function to set reminder alarm
+  const setReminderAlarm = (habitId: string, time: string) => {
+    const [hours, minutes] = time.split(":").map(Number);
+    const now = new Date();
+    const alarmTime = new Date();
+    alarmTime.setHours(hours, minutes, 0, 0);
+
+    if (alarmTime <= now) {
+      alarmTime.setDate(alarmTime.getDate() + 1);
+    }
+
+    const periodInMinutes = 24 * 60;
+
+    chrome.alarms.create(`habit-reminder-${habitId}`, {
+      when: alarmTime.getTime(),
+      periodInMinutes: periodInMinutes,
+    });
+  };
+
   const handleCSVImport = useCallback(
-    async (importedHabits: Habit[]) => {
+    async (
+      importedHabits: Habit[],
+      importedReminders: Record<string, string>,
+    ) => {
       await saveHabits(importedHabits);
+
+      // Save reminders
+      if (typeof chrome !== "undefined" && chrome.storage) {
+        // Clear old reminders that aren't in the new habits
+        const currentReminders = await chrome.storage.local.get(["reminders"]);
+        const reminders = currentReminders.reminders || {};
+
+        // Remove reminders for habits that no longer exist
+        Object.keys(reminders).forEach((reminderHabitId) => {
+          if (!importedHabits.some((h) => h.id === reminderHabitId)) {
+            if (chrome.alarms) {
+              chrome.alarms.clear(`habit-reminder-${reminderHabitId}`);
+            }
+            delete reminders[reminderHabitId];
+          }
+        });
+
+        // Add/update imported reminders
+        Object.entries(importedReminders).forEach(([habitId, time]) => {
+          if (importedHabits.some((h) => h.id === habitId)) {
+            reminders[habitId] = time;
+            if (chrome.alarms && time) {
+              setReminderAlarm(habitId, time);
+            }
+          }
+        });
+
+        await chrome.storage.local.set({ reminders });
+      }
     },
     [saveHabits],
   );
