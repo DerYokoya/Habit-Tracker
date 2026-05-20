@@ -69,6 +69,7 @@ The secondary problem is accountability over time. Checking off a box is satisfy
 | **Date Logic** | date-fns |
 | **Icons** | lucide-react |
 | **Build Tool** | Vite |
+| **Testing** | Vitest + Testing Library |
 
 ---
 
@@ -137,6 +138,34 @@ npm run dev
 
 ---
 
+## Testing
+
+The project uses [Vitest](https://vitest.dev/) with [Testing Library](https://testing-library.com/) and jsdom. All tests run against real utility logic and the `HabitRow` component.
+
+```bash
+# Run all tests once
+npm run test:run
+
+# Watch mode (reruns on file changes)
+npm test
+
+# Generate coverage report
+npm run test:coverage
+```
+
+### Test Coverage
+
+| File | What's tested |
+|---|---|
+| `streakUtils.test.ts` | `calculateCurrentStreak`, `calculateLongestStreak` — gaps, consecutive days, unsorted dates |
+| `dateUtils.test.ts` | `getDateKey`, `getDaysForView`, `navigateDate`, `getViewTitle` across all three views |
+| `useStreakCalculator.test.ts` | Hook output — zero state, consecutive streaks, gaps, longest streak across multiple streaks |
+| `HabitRow.test.tsx` | Renders name and streak badge, triggers `onShowStats`, shows delete confirmation before calling `onDelete` |
+
+The Chrome API (`chrome.storage`, `chrome.alarms`, `chrome.notifications`, `chrome.runtime`) and `window.matchMedia` are mocked in `src/test/setup.ts` so tests run without a browser extension context.
+
+---
+
 ## Project Structure
 
 ```
@@ -167,9 +196,16 @@ habit-tracker/
 │   ├── types/
 │   │   └── index.ts            # Shared TypeScript interfaces (Habit, HabitStats, ViewType…)
 │   ├── utils/
+│   │   ├── __tests__/
+│   │   │   ├── HabitRow.test.tsx       # Component render and interaction tests
+│   │   │   ├── dateUtils.test.ts       # Date formatting and view range tests
+│   │   │   ├── streakUtils.test.ts     # Streak calculation unit tests
+│   │   │   └── useStreakCalculator.test.ts # Hook output tests
 │   │   ├── dateUtils.ts        # Date key formatting and view range helpers
 │   │   ├── statsUtils.ts       # Completion rate and overall stats
 │   │   └── streakUtils.ts      # Streak calculation utilities
+│   ├── test/
+│   │   └── setup.ts            # Vitest setup — Chrome API and matchMedia mocks
 │   ├── App.tsx                 # Root component
 │   ├── App.css                 # Global styles
 │   └── index.tsx               # React entry point
@@ -189,15 +225,14 @@ habit-tracker/
 - Structuring a **multi-view app** (daily / weekly / monthly) with shared state
 - Integrating **Recharts** for lightweight in-extension data visualization
 - Using **TypeScript** with strict mode for type safety across hooks, components, and utilities
+- Writing **unit and component tests** with Vitest and Testing Library, including mocking the Chrome extension API
 
 ---
 
 ## Future Improvements
 
-- **Reminder notifications** — using the Chrome Alarms API to remind the user at a set time each day
 - **Habit categories and tags** — grouping related habits and filtering by category
 - **Goal setting** — defining a weekly target per habit (e.g. 5 out of 7 days) and tracking progress toward it
-- **Export** — downloading history as CSV or JSON
 - **Dark mode** — matching the extension to the system theme
 - **Habit archive** — hiding completed or retired habits without losing their history
 - **Chrome Web Store release** — packaging and publishing so anyone can install with one click
