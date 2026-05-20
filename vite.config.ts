@@ -1,26 +1,22 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  build: {
-    outDir: 'build',
-    chunkSizeWarningLimit: 1000,
-    rollupOptions: {
-      input: {
-        main: 'index.html',
-        background: 'src/background.ts'
-      },
-      output: {
-        entryFileNames: (chunkInfo) => {
-          if (chunkInfo.name === 'background') {
-            return 'background.js';
-          }
-          return 'static/js/[name].[hash].js';
-        },
-        chunkFileNames: 'static/js/[name].[hash].js',
-        assetFileNames: 'static/[ext]/[name].[hash].[ext]',
-      },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/test/',
+        '**/*.d.ts',
+        '**/*.config.{js,ts}',
+        '**/background.ts',
+      ],
     },
   },
 });

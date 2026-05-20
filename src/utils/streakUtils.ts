@@ -1,12 +1,13 @@
-import { subDays } from 'date-fns';
-import { getDateKey } from './dateUtils';
+import { subDays, differenceInDays, parseISO } from "date-fns";
+import { getDateKey } from "./dateUtils";
 
-// Define type for habit completions object
-interface HabitCompletions {
+export interface HabitCompletions {
   [dateKey: string]: boolean;
 }
 
-export const calculateCurrentStreak = (habitCompletions: HabitCompletions): number => {
+export const calculateCurrentStreak = (
+  habitCompletions: HabitCompletions,
+): number => {
   let streak = 0;
   let date = new Date();
   date.setHours(0, 0, 0, 0);
@@ -19,22 +20,39 @@ export const calculateCurrentStreak = (habitCompletions: HabitCompletions): numb
   return streak;
 };
 
-export const calculateLongestStreak = (habitCompletions: HabitCompletions): number => {
-  const dates = Object.keys(habitCompletions).sort();
-  let longest = 0;
-  let temp = 0;
+export const calculateLongestStreak = (
+  habitCompletions: HabitCompletions,
+): number => {
+  const completionDates = Object.keys(habitCompletions)
+    .filter((date) => habitCompletions[date])
+    .sort();
 
-  for (let i = 0; i < dates.length; i++) {
-    const current = new Date(dates[i]);
-    const prev = i > 0 ? new Date(dates[i - 1]) : null;
+  if (completionDates.length === 0) return 0;
 
-    if (prev && current.getTime() - prev.getTime() === 86400000) {
-      temp++;
+  let longestStreak = 1;
+  let currentStreak = 1;
+
+  for (let i = 1; i < completionDates.length; i++) {
+    const prevDate = parseISO(completionDates[i - 1]);
+    const currDate = parseISO(completionDates[i]);
+    const diffDays = differenceInDays(currDate, prevDate);
+
+    if (diffDays === 1) {
+      currentStreak++;
+      longestStreak = Math.max(longestStreak, currentStreak);
     } else {
-      temp = 1;
+      currentStreak = 1;
     }
-    longest = Math.max(longest, temp);
   }
 
-  return longest;
+  return longestStreak;
+};
+
+// New utility function for testing
+export const generateMockCompletions = (dates: string[]): HabitCompletions => {
+  const completions: HabitCompletions = {};
+  dates.forEach((date) => {
+    completions[date] = true;
+  });
+  return completions;
 };
