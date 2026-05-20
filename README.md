@@ -6,10 +6,40 @@ A Chrome extension for building and tracking daily habits with streaks, drag-and
 
 ## Screenshots
 
-<img width="2560" height="1447" alt="react-1" src="https://github.com/user-attachments/assets/fd149f2b-0cbb-49cc-9fe7-b4701e879f08" />
-<img width="2560" height="1458" alt="react-2" src="https://github.com/user-attachments/assets/fe3369ef-adce-4b3a-9aed-e177bf730adb" />
-<img width="2560" height="1441" alt="react-3" src="https://github.com/user-attachments/assets/f35b00a1-bc2a-49b9-9afa-e6de5709191f" />
-<img width="2560" height="1444" alt="react-4" src="https://github.com/user-attachments/assets/75e1684e-8a8d-44c8-b610-0c369cd4cec8" />
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" valign="top">
+        <img width="350" alt="Today-view" src="https://github.com/user-attachments/assets/fd149f2b-0cbb-49cc-9fe7-b4701e879f08" /><br />
+        <sub><b>Today view</b></sub>
+      </td>
+      <td align="center" valign="top">
+        <img width="350" alt="Statistics" src="https://github.com/user-attachments/assets/fe3369ef-adce-4b3a-9aed-e177bf730adb" /><br />
+        <sub><b>Statistics</b></sub>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" valign="top">
+        <img width="350" alt="Weekly-view" src="https://github.com/user-attachments/assets/f35b00a1-bc2a-49b9-9afa-e6de5709191f" /><br />
+        <sub><b>Weekly view</b></sub>
+      </td>
+      <td align="center" valign="top">
+        <img width="350" alt="Monthly-view" src="https://github.com/user-attachments/assets/75e1684e-8a8d-44c8-b610-0c369cd4cec8" /><br />
+        <sub><b>Monthly view</b></sub>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" valign="top">
+        <img width="350" alt="Notifications" src="https://github.com/user-attachments/assets/898f5ccf-cf12-4a19-94c5-caa4bdf66f2d" /><br />
+        <sub><b>Notifications</b></sub>
+      </td>
+      <td align="center" valign="top">
+        <img width="350" alt="Tests" src="https://github.com/user-attachments/assets/feeaffed-1281-45d7-bcbd-642c729793bf" /><br />
+        <sub><b>Tests</b></sub>
+      </td>
+    </tr>
+  </table>
+</div>
 
 ---
 
