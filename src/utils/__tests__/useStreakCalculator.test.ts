@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useStreakCalculator } from '../useStreakCalculator';
+import { useStreakCalculator } from '../../hooks/useStreakCalculator';
 import { format, subDays } from 'date-fns';
 
 // Mock date-fns to have consistent dates in tests

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
-import { HabitRow } from '../HabitRow';
+import { HabitRow } from '../../components/HabitRow';
 
 // Mock the drag-and-drop context
 const wrapper = ({ children }: { children: React.ReactNode }) => (
