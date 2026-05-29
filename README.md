@@ -1,3 +1,5 @@
+[Français](./README.fr.md) | **English**
+
 # Habit Tracker
 
 A Chrome extension for building and tracking daily habits with streaks, drag-and-drop reordering, daily/weekly/monthly views, and per-habit statistics. Built with React + TypeScript and packaged as a Manifest V3 Chrome extension.
