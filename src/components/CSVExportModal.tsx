@@ -15,6 +15,11 @@ export const CSVExportModal: React.FC<CSVExportModalProps> = ({ habits, onClose,
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const quoteCSVField = (value: string): string => {
+    const escaped = value.replace(/"/g, '""');
+    return `"${escaped}"`;
+  };
+
   // Convert habits to CSV
   const habitsToCSV = (habits: Habit[]): string => {
     // Collect all dates across all habits
@@ -25,14 +30,17 @@ export const CSVExportModal: React.FC<CSVExportModalProps> = ({ habits, onClose,
     const sortedDates = Array.from(allDates).sort();
 
     // Create header row
-    const headers = ['Habit ID', 'Habit Name', 'Color', ...sortedDates];
+    const headers = ['Habit ID', 'Habit Name', 'Color', 'Category', 'Tags', ...sortedDates];
     
     // Create data rows
     const rows = habits.map(habit => {
+      const tagString = (habit.tags || []).join(';');
       const row: string[] = [
         habit.id,
-        `"${habit.name.replace(/"/g, '""')}"`, // Escape quotes
+        quoteCSVField(habit.name),
         habit.color,
+        quoteCSVField(habit.category || ''),
+        quoteCSVField(tagString),
       ];
       
       sortedDates.forEach(date => {
@@ -55,8 +63,17 @@ export const CSVExportModal: React.FC<CSVExportModalProps> = ({ habits, onClose,
     
     // Parse header
     const headers = parseCSVLine(lines[0]);
-    const dateColumns = headers.slice(3); // After ID, Name, Color
+    const categoryIndex = headers.indexOf('Category');
+    const tagsIndex = headers.indexOf('Tags');
+    const dateColumns = headers.slice(Math.max(3, categoryIndex + 1, tagsIndex + 1));
     
+    const parseTagsField = (value: string): string[] => {
+      return value
+        .split(/[;,]+/)
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+    };
+
     const habits: Habit[] = [];
     
     // Parse data rows
@@ -68,15 +85,23 @@ export const CSVExportModal: React.FC<CSVExportModalProps> = ({ habits, onClose,
       
       const habit: Habit = {
         id: values[0] || Date.now().toString() + i,
-        name: values[1].replace(/^"|"$/g, '').replace(/""/g, '"'),
+        name: values[1],
         color: values[2] || getRandomColor(),
         completions: {},
       };
+
+      if (categoryIndex >= 0) {
+        habit.category = values[categoryIndex] || undefined;
+      }
+      if (tagsIndex >= 0) {
+        const tags = parseTagsField(values[tagsIndex] || '');
+        habit.tags = tags.length > 0 ? tags : undefined;
+      }
       
       // Parse completion data
-      for (let j = 0; j < dateColumns.length && j + 3 < values.length; j++) {
+      for (let j = 0; j < dateColumns.length && j + Math.max(3, categoryIndex + 1, tagsIndex + 1) < values.length; j++) {
         const date = dateColumns[j];
-        const value = values[j + 3];
+        const value = values[j + Math.max(3, categoryIndex + 1, tagsIndex + 1)];
         if (date && (value === '1' || value === 'true' || value === 'TRUE')) {
           habit.completions[date] = true;
         }

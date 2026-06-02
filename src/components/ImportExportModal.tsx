@@ -73,40 +73,50 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
-  // FIXED: Export includes reminders
+  const quoteCSVField = (value: string): string => {
+    const escaped = value.replace(/"/g, '""');
+    return `"${escaped}"`;
+  };
+
+  // FIXED: Export includes reminders, categories, and tags
   const handleExportCSV = () => {
     const allDates = new Set<string>();
     habits.forEach(habit => {
       Object.keys(habit.completions).forEach(date => allDates.add(date));
     });
-    
+
     const sortedDates = Array.from(allDates).sort();
     const hasAnyReminders = Object.keys(reminders).length > 0;
-    
-    const headers = hasAnyReminders 
-      ? ["Habit ID", "Habit Name", "Color", "Reminder Time", ...sortedDates]
-      : ["Habit ID", "Habit Name", "Color", ...sortedDates];
-    
+
+    const headers = ["Habit ID", "Habit Name", "Color", "Category", "Tags"];
+    if (hasAnyReminders) {
+      headers.push("Reminder Time");
+    }
+    headers.push(...sortedDates);
+
     const rows = habits.map(habit => {
+      const tagString = (habit.tags || []).join(";");
       const row = [
         habit.id,
-        `"${habit.name.replace(/"/g, '""')}"`,
-        habit.color
+        quoteCSVField(habit.name),
+        habit.color,
+        quoteCSVField(habit.category || ""),
+        quoteCSVField(tagString),
       ];
-      
+
       if (hasAnyReminders) {
         const reminderTime = reminders[habit.id] || "";
         row.push(reminderTime);
       }
-      
+
       sortedDates.forEach(date => {
         const completed = habit.completions[date] || false;
         row.push(completed ? "1" : "0");
       });
-      
+
       return row.join(",");
     });
-    
+
     const csvContent = [headers.join(","), ...rows].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -117,7 +127,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  // FIXED: Import reads reminders
+  // FIXED: Import reads reminders, categories, and tags
   const csvToHabits = (csv: string): { habits: Habit[]; reminders: Record<string, string> } => {
     const lines = csv.trim().split("\n");
     if (lines.length < 2) {
@@ -126,57 +136,73 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
 
     const delimiter = detectDelimiter(lines[0]);
     const headers = parseLine(lines[0], delimiter);
-    
+
     const hasReminderColumn = headers.includes("Reminder Time");
+    const hasCategoryColumn = headers.includes("Category");
+    const hasTagsColumn = headers.includes("Tags");
+
     const reminderColumnIndex = hasReminderColumn ? headers.indexOf("Reminder Time") : -1;
-    
+    const categoryColumnIndex = hasCategoryColumn ? headers.indexOf("Category") : -1;
+    const tagsColumnIndex = hasTagsColumn ? headers.indexOf("Tags") : -1;
+
     let startIdx = 3;
-    if (hasReminderColumn) {
-      startIdx = 4;
-    }
-    
+    if (hasCategoryColumn) startIdx = Math.max(startIdx, categoryColumnIndex + 1);
+    if (hasTagsColumn) startIdx = Math.max(startIdx, tagsColumnIndex + 1);
+    if (hasReminderColumn) startIdx = Math.max(startIdx, reminderColumnIndex + 1);
+
     const dateColumns = headers.slice(startIdx);
     const habitsMap = new Map<string, Habit>();
     const remindersMap: Record<string, string> = {};
 
+    const parseTagsField = (value: string): string[] => {
+      return value
+        .split(/[;,]+/)
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+    };
+
     for (let i = 1; i < lines.length; i++) {
       if (!lines[i].trim()) continue;
-      
+
       const values = parseLine(lines[i], delimiter);
       if (values.length < 3) continue;
-      
+
       let habitId = values[0];
       if (habitId.includes('E') || habitId.includes('e')) {
         const numValue = parseFloat(habitId);
         habitId = Math.floor(numValue).toString();
       }
-      
-      const habitName = values[1].replace(/^"|"$/g, '');
-      const color = values[2];
-      
-      if (hasReminderColumn && values[reminderColumnIndex] && values[reminderColumnIndex].trim()) {
+
+      const habitName = values[1];
+      const color = values[2] || getRandomColor();
+      const category = categoryColumnIndex >= 0 ? values[categoryColumnIndex] || undefined : undefined;
+      const tags = tagsColumnIndex >= 0 ? parseTagsField(values[tagsColumnIndex] || "") : undefined;
+
+      if (hasReminderColumn && reminderColumnIndex >= 0 && values[reminderColumnIndex] && values[reminderColumnIndex].trim()) {
         const reminderTime = values[reminderColumnIndex].trim();
         if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(reminderTime)) {
           remindersMap[habitId] = reminderTime;
         }
       }
-      
+
       let habit = habitsMap.get(habitId);
       if (!habit) {
         habit = {
           id: habitId,
           name: habitName,
-          color: color || getRandomColor(),
+          color,
+          category: category || undefined,
+          tags: tags && tags.length > 0 ? tags : undefined,
           completions: {},
         };
         habitsMap.set(habitId, habit);
       }
-      
-      const dataStartIdx = hasReminderColumn ? reminderColumnIndex + 1 : 3;
+
+      const dataStartIdx = startIdx;
       for (let j = 0; j < dateColumns.length && j + dataStartIdx < values.length; j++) {
         const dateStr = dateColumns[j];
         const value = values[j + dataStartIdx];
-        
+
         if (dateStr && (value === "1" || value === "true" || value === "TRUE" || value === "1.0")) {
           let normalizedDate = dateStr;
           if (dateStr.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
@@ -190,12 +216,12 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
         }
       }
     }
-    
+
     const importedHabits = Array.from(habitsMap.values());
     if (importedHabits.length === 0) {
       throw new Error("No valid habits found in CSV");
     }
-    
+
     return { habits: importedHabits, reminders: remindersMap };
   };
 
