@@ -36,6 +36,7 @@ export const HabitRow: React.FC<HabitRowProps> = ({
   onDelete,
   onShowStats,
   onSetReminder,
+  onEdit,
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
