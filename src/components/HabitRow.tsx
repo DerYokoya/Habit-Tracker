@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
-import { GripVertical, Trash2, Flame, BarChart3, Bell } from "lucide-react";
+import { GripVertical, Trash2, Flame, BarChart3, Bell, Tag } from "lucide-react";
 import { Habit, HabitStats, ViewType } from "../types";
 import {
   format,
@@ -163,13 +163,28 @@ export const HabitRow: React.FC<HabitRowProps> = ({
             <div {...provided.dragHandleProps} className="drag-handle">
               <GripVertical size={16} />
             </div>
-            <div className="habit-name" onClick={() => onShowStats(habit)}>
-              <div
-                className="habit-color"
-                style={{ backgroundColor: habit.color }}
-              />
-              <span>{habit.name}</span>
-              <BarChart3 size={14} color="#94a3b8" />
+            <div className="habit-name-col">
+              <div className="habit-name" onClick={() => onShowStats(habit)}>
+                <div
+                  className="habit-color"
+                  style={{ backgroundColor: habit.color }}
+                />
+                <span>{habit.name}</span>
+                <BarChart3 size={14} color="#94a3b8" />
+              </div>
+              {(habit.category || (habit.tags && habit.tags.length > 0)) && (
+                <div className="habit-meta">
+                  {habit.category && (
+                    <span className="habit-category-badge">{habit.category}</span>
+                  )}
+                  {habit.tags?.map((tag) => (
+                    <span key={tag} className="habit-tag-badge">
+                      <Tag size={9} />
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="streak-badge">
               <Flame size={12} />

@@ -198,3 +198,45 @@
   transform: translateY(-2px);
   box-shadow: var(--shadow-hover);
 }
+/* Category and tag badges on habit rows */
+.habit-name-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.habit-name-col .habit-name {
+  flex: unset;
+}
+
+.habit-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-left: 18px;
+}
+
+.habit-category-badge {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 20px;
+  background: #eef2ff;
+  color: #6366f1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.habit-tag-badge {
+  font-size: 0.62rem;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 20px;
+  background: #f0fdf4;
+  color: #059669;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}

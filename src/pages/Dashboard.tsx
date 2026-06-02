@@ -17,9 +17,9 @@ import {
   Settings,
   Download,
   Upload,
-  Bell,
   X,
-  FileText,
+  Tag,
+  Filter,
 } from "lucide-react";
 import {
   format,
@@ -33,7 +33,7 @@ import { useChromeStorage } from "../hooks/useChromeStorage";
 import { useStreakCalculator } from "../hooks/useStreakCalculator";
 import { HabitRow } from "../components/HabitRow";
 import { StatsModal } from "../components/StatsModal";
-import { Habit, ViewType } from "../types";
+import { Habit, ViewType, DEFAULT_CATEGORIES } from "../types";
 import { ReminderSettings } from "../components/ReminderSettings";
 import { loadData } from "../services/storageService";
 import { ImportExportModal } from "../components/ImportExportModal";
@@ -56,6 +56,8 @@ export const Dashboard: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
+  const [newHabitCategory, setNewHabitCategory] = useState("");
+  const [newHabitTags, setNewHabitTags] = useState("");
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
@@ -66,6 +68,10 @@ export const Dashboard: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [reminders, setReminders] = useState<Record<string, string>>({});
 
+  // Filter state
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterTag, setFilterTag] = useState<string>("all");
+
   useEffect(() => {
     const loadReminders = async () => {
       if (typeof chrome !== "undefined" && chrome.storage) {
@@ -73,9 +79,30 @@ export const Dashboard: React.FC = () => {
         setReminders(result.reminders || {});
       }
     };
-
     loadReminders();
   }, []);
+
+  // Derive all categories and tags from habits
+  const allCategories = useMemo(() => {
+    const cats = new Set<string>();
+    habits.forEach((h) => { if (h.category) cats.add(h.category); });
+    return Array.from(cats).sort();
+  }, [habits]);
+
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    habits.forEach((h) => { h.tags?.forEach((t) => tags.add(t)); });
+    return Array.from(tags).sort();
+  }, [habits]);
+
+  // Filtered habits
+  const filteredHabits = useMemo(() => {
+    return habits.filter((h) => {
+      const catMatch = filterCategory === "all" || h.category === filterCategory;
+      const tagMatch = filterTag === "all" || (h.tags && h.tags.includes(filterTag));
+      return catMatch && tagMatch;
+    });
+  }, [habits, filterCategory, filterTag]);
 
   const todayCompletions = useMemo(() => {
     const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -124,17 +151,26 @@ export const Dashboard: React.FC = () => {
   const handleAddHabit = useCallback(async () => {
     if (!newHabitName.trim()) return;
 
+    const parsedTags = newHabitTags
+      .split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+
     const newHabit: Habit = {
       id: Date.now().toString(),
       name: newHabitName.trim(),
       color: COLORS[habits.length % COLORS.length],
       completions: {},
+      category: newHabitCategory || undefined,
+      tags: parsedTags.length > 0 ? parsedTags : undefined,
     };
 
     await saveHabits([...habits, newHabit]);
     setNewHabitName("");
+    setNewHabitCategory("");
+    setNewHabitTags("");
     setShowAddModal(false);
-  }, [newHabitName, habits, saveHabits]);
+  }, [newHabitName, newHabitCategory, newHabitTags, habits, saveHabits]);
 
   const handleDeleteHabit = useCallback(
     async (habitId: string) => {
@@ -148,13 +184,19 @@ export const Dashboard: React.FC = () => {
     async (result: DropResult) => {
       if (!result.destination) return;
 
+      // Drag within filtered list needs to map back to full habits array
+      const srcHabit = filteredHabits[result.source.index];
+      const destHabit = filteredHabits[result.destination.index];
+      const srcIdx = habits.findIndex((h) => h.id === srcHabit.id);
+      const destIdx = habits.findIndex((h) => h.id === destHabit.id);
+
       const items = Array.from(habits);
-      const [reorderedItem] = items.splice(result.source.index, 1);
-      items.splice(result.destination.index, 0, reorderedItem);
+      const [reorderedItem] = items.splice(srcIdx, 1);
+      items.splice(destIdx, 0, reorderedItem);
 
       await saveHabits(items);
     },
-    [habits, saveHabits],
+    [habits, filteredHabits, saveHabits],
   );
 
   const navigateDate = (direction: "prev" | "next") => {
@@ -197,13 +239,13 @@ export const Dashboard: React.FC = () => {
   };
 
   const getReminders = useCallback(async () => {
-  if (typeof chrome !== "undefined" && chrome.storage) {
-    const result = await chrome.storage.local.get(["reminders"]);
-    setReminders(result.reminders || {});
-    return result.reminders || {};
-  }
-  return {};
-}, []);
+    if (typeof chrome !== "undefined" && chrome.storage) {
+      const result = await chrome.storage.local.get(["reminders"]);
+      setReminders(result.reminders || {});
+      return result.reminders || {};
+    }
+    return {};
+  }, []);
 
   const handleExportJSON = useCallback(async () => {
     const reminders = await getReminders();
@@ -230,21 +272,16 @@ export const Dashboard: React.FC = () => {
       const text = await file.text();
       const importData = JSON.parse(text);
 
-      // Handle both old format (just habits array) and new format (object with habits and reminders)
       let importedHabits: Habit[];
       let importedReminders: Record<string, string> = {};
 
       if (Array.isArray(importData)) {
-        // Old format - just habits array
         importedHabits = importData;
       } else if (importData.habits && Array.isArray(importData.habits)) {
-        // New format with reminders
         importedHabits = importData.habits;
         importedReminders = importData.reminders || {};
       } else {
-        throw new Error(
-          "Invalid format: expected habits array or export object",
-        );
+        throw new Error("Invalid format: expected habits array or export object");
       }
 
       const validHabits = importedHabits.filter(
@@ -262,19 +299,14 @@ export const Dashboard: React.FC = () => {
       ) {
         await saveHabits(validHabits);
 
-        // Restore reminders
         if (
           typeof chrome !== "undefined" &&
           chrome.storage &&
           Object.keys(importedReminders).length > 0
         ) {
-          // First clear existing reminders for habits that might be removed
-          const currentReminders = await chrome.storage.local.get([
-            "reminders",
-          ]);
+          const currentReminders = await chrome.storage.local.get(["reminders"]);
           const reminders = currentReminders.reminders || {};
 
-          // Remove reminders for habits that no longer exist
           Object.keys(reminders).forEach((reminderHabitId) => {
             if (!validHabits.some((h) => h.id === reminderHabitId)) {
               if (typeof chrome !== "undefined" && chrome.alarms) {
@@ -284,10 +316,8 @@ export const Dashboard: React.FC = () => {
             }
           });
 
-          // Add/update imported reminders
           Object.entries(importedReminders).forEach(([habitId, time]) => {
             reminders[habitId] = time;
-            // Recreate the alarm
             if (typeof chrome !== "undefined" && chrome.alarms && time) {
               setReminderAlarm(habitId, time as string);
             }
@@ -301,7 +331,6 @@ export const Dashboard: React.FC = () => {
     [saveHabits],
   );
 
-  // Helper function to set reminder alarm
   const setReminderAlarm = (habitId: string, time: string) => {
     const [hours, minutes] = time.split(":").map(Number);
     const now = new Date();
@@ -327,13 +356,10 @@ export const Dashboard: React.FC = () => {
     ) => {
       await saveHabits(importedHabits);
 
-      // Save reminders
       if (typeof chrome !== "undefined" && chrome.storage) {
-        // Clear old reminders that aren't in the new habits
         const currentReminders = await chrome.storage.local.get(["reminders"]);
         const reminders = currentReminders.reminders || {};
 
-        // Remove reminders for habits that no longer exist
         Object.keys(reminders).forEach((reminderHabitId) => {
           if (!importedHabits.some((h) => h.id === reminderHabitId)) {
             if (chrome.alarms) {
@@ -343,7 +369,6 @@ export const Dashboard: React.FC = () => {
           }
         });
 
-        // Add/update imported reminders
         Object.entries(importedReminders).forEach(([habitId, time]) => {
           if (importedHabits.some((h) => h.id === habitId)) {
             reminders[habitId] = time;
@@ -427,10 +452,9 @@ export const Dashboard: React.FC = () => {
   }, [showSettingsMenu]);
 
   useEffect(() => {
-    // Listen for storage changes (when background marks habit complete)
     const handleStorageChange = (changes: any, areaName: string) => {
       if (areaName === "local" && changes.habits) {
-        loadData(); // Reload habits
+        loadData();
       }
     };
 
@@ -444,6 +468,8 @@ export const Dashboard: React.FC = () => {
       }
     };
   }, [loadData]);
+
+  const isFiltering = filterCategory !== "all" || filterTag !== "all";
 
   if (loading) {
     return (
@@ -517,27 +543,21 @@ export const Dashboard: React.FC = () => {
 
       <div className="stats-cards">
         <div className="stat-card">
-          <div className="stat-icon" style={{ color: "#6366f1" }}>
-            🎯
-          </div>
+          <div className="stat-icon" style={{ color: "#6366f1" }}>🎯</div>
           <div className="stat-info">
             <div className="stat-value">{habits.length}</div>
             <div className="stat-label">Active Habits</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon" style={{ color: "#10b981" }}>
-            📈
-          </div>
+          <div className="stat-icon" style={{ color: "#10b981" }}>📈</div>
           <div className="stat-info">
             <div className="stat-value">{totalCheckIns}</div>
             <div className="stat-label">Total Check-ins</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon" style={{ color: "#f59e0b" }}>
-            🔥
-          </div>
+          <div className="stat-icon" style={{ color: "#f59e0b" }}>🔥</div>
           <div className="stat-info">
             <div className="stat-value">{totalStreak}</div>
             <div className="stat-label">Total Streak</div>
@@ -548,32 +568,77 @@ export const Dashboard: React.FC = () => {
       <div className="view-tabs">
         <button
           className={`tab ${view === "daily" ? "active" : ""}`}
-          onClick={() => {
-            setView("daily");
-            goToToday();
-          }}
+          onClick={() => { setView("daily"); goToToday(); }}
         >
           <LayoutGrid size={14} /> Daily
         </button>
         <button
           className={`tab ${view === "weekly" ? "active" : ""}`}
-          onClick={() => {
-            setView("weekly");
-            goToToday();
-          }}
+          onClick={() => { setView("weekly"); goToToday(); }}
         >
           <CalendarDays size={14} /> Weekly
         </button>
         <button
           className={`tab ${view === "monthly" ? "active" : ""}`}
-          onClick={() => {
-            setView("monthly");
-            goToToday();
-          }}
+          onClick={() => { setView("monthly"); goToToday(); }}
         >
           <Calendar size={14} /> Monthly
         </button>
       </div>
+
+      {/* Filter Bar */}
+      {(allCategories.length > 0 || allTags.length > 0) && (
+        <div className="filter-bar">
+          <div className="filter-bar-inner">
+            <Filter size={13} className="filter-icon" />
+            {allCategories.length > 0 && (
+              <div className="filter-group">
+                <button
+                  className={`filter-chip ${filterCategory === "all" ? "active" : ""}`}
+                  onClick={() => setFilterCategory("all")}
+                >
+                  All
+                </button>
+                {allCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    className={`filter-chip category-chip ${filterCategory === cat ? "active" : ""}`}
+                    onClick={() =>
+                      setFilterCategory(filterCategory === cat ? "all" : cat)
+                    }
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            )}
+            {allTags.length > 0 && (
+              <div className="filter-group filter-tags-group">
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    className={`filter-chip tag-chip ${filterTag === tag ? "active" : ""}`}
+                    onClick={() =>
+                      setFilterTag(filterTag === tag ? "all" : tag)
+                    }
+                  >
+                    <Tag size={10} />
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {isFiltering && (
+            <button
+              className="filter-clear"
+              onClick={() => { setFilterCategory("all"); setFilterTag("all"); }}
+            >
+              <X size={12} /> Clear
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="date-nav">
         <button className="nav-btn" onClick={() => navigateDate("prev")}>
@@ -599,7 +664,12 @@ export const Dashboard: React.FC = () => {
               {...provided.droppableProps}
               ref={provided.innerRef}
             >
-              {habits.map((habit, index) => (
+              {filteredHabits.length === 0 && isFiltering && (
+                <div className="filter-empty">
+                  No habits match the current filters.
+                </div>
+              )}
+              {filteredHabits.map((habit, index) => (
                 <HabitRow
                   key={habit.id}
                   habit={habit}
@@ -644,7 +714,33 @@ export const Dashboard: React.FC = () => {
               onKeyPress={(e) => e.key === "Enter" && handleAddHabit()}
               autoFocus
             />
-            <div className="modal-actions">
+            <div className="modal-field">
+              <label className="modal-label">Category</label>
+              <select
+                className="modal-select"
+                value={newHabitCategory}
+                onChange={(e) => setNewHabitCategory(e.target.value)}
+              >
+                <option value="">No category</option>
+                {DEFAULT_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            <div className="modal-field">
+              <label className="modal-label">
+                <Tag size={12} /> Tags
+                <span className="modal-label-hint">comma-separated</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g., morning, solo, 10min"
+                value={newHabitTags}
+                onChange={(e) => setNewHabitTags(e.target.value)}
+                style={{ marginBottom: 0 }}
+              />
+            </div>
+            <div className="modal-actions" style={{ marginTop: "16px" }}>
               <button
                 className="cancel-btn"
                 onClick={() => setShowAddModal(false)}

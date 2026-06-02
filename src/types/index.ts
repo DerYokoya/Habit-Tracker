@@ -3,6 +3,8 @@ export interface Habit {
   name: string;
   color: string;
   completions: Record<string, boolean>;
+  category?: string;
+  tags?: string[];
 }
 
 export interface HabitStats {
@@ -22,3 +24,15 @@ export interface DailyCompletion {
   completed: number;
   total: number;
 }
+
+export const DEFAULT_CATEGORIES = [
+  'Health',
+  'Fitness',
+  'Mindfulness',
+  'Learning',
+  'Productivity',
+  'Social',
+  'Finance',
+  'Creativity',
+  'Other',
+] as const;

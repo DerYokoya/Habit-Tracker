@@ -51,3 +51,143 @@ body {
   overflow: hidden;
   box-shadow: var(--shadow-xl);
 }
+/* ── Filter bar ── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 4px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-gray);
+}
+
+.filter-bar-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.filter-bar-inner::-webkit-scrollbar { display: none; }
+
+.filter-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.filter-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.filter-tags-group {
+  border-left: 1px solid var(--border-light);
+  padding-left: 6px;
+}
+
+.filter-chip {
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 2px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-white);
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.filter-chip:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.filter-chip.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: white;
+}
+
+.category-chip.active {
+  background: #6366f1;
+  border-color: #6366f1;
+}
+
+.tag-chip.active {
+  background: #059669;
+  border-color: #059669;
+}
+
+.filter-clear {
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid #fca5a5;
+  background: #fee2e2;
+  color: #ef4444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.filter-clear:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.filter-empty {
+  text-align: center;
+  padding: 24px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+/* ── Add habit modal extras ── */
+.modal-field {
+  margin-bottom: 12px;
+}
+
+.modal-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-light);
+  margin-bottom: 5px;
+}
+
+.modal-label-hint {
+  font-weight: 400;
+  color: #94a3b8;
+  margin-left: 4px;
+}
+
+.modal-select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  background: var(--bg-white);
+  color: var(--text-dark);
+  cursor: pointer;
+  appearance: auto;
+}
+
+.modal-select:focus {
+  outline: none;
+  border-color: #6366f1;
+}

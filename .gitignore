@@ -3,5 +3,3 @@ build/
 .env
 .DS_Store
 coverage/
-dist/
-logs/
