@@ -54,10 +54,11 @@ export const Dashboard: React.FC = () => {
   const { habitStats } = useStreakCalculator(habits);
   const [view, setView] = useState<ViewType>("daily");
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showHabitModal, setShowHabitModal] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
   const [newHabitCategory, setNewHabitCategory] = useState("");
   const [newHabitTags, setNewHabitTags] = useState("");
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
@@ -148,7 +149,7 @@ export const Dashboard: React.FC = () => {
     [habits, saveHabits],
   );
 
-  const handleAddHabit = useCallback(async () => {
+  const handleSaveHabit = useCallback(async () => {
     if (!newHabitName.trim()) return;
 
     const parsedTags = newHabitTags
@@ -156,21 +157,58 @@ export const Dashboard: React.FC = () => {
       .map((t) => t.trim().toLowerCase())
       .filter(Boolean);
 
-    const newHabit: Habit = {
-      id: Date.now().toString(),
-      name: newHabitName.trim(),
-      color: COLORS[habits.length % COLORS.length],
-      completions: {},
-      category: newHabitCategory || undefined,
-      tags: parsedTags.length > 0 ? parsedTags : undefined,
-    };
+    if (editingHabit) {
+      const updatedHabits = habits.map((habit) =>
+        habit.id === editingHabit.id
+          ? {
+              ...habit,
+              name: newHabitName.trim(),
+              category: newHabitCategory || undefined,
+              tags: parsedTags.length > 0 ? parsedTags : undefined,
+            }
+          : habit,
+      );
+      await saveHabits(updatedHabits);
+    } else {
+      const newHabit: Habit = {
+        id: Date.now().toString(),
+        name: newHabitName.trim(),
+        color: COLORS[habits.length % COLORS.length],
+        completions: {},
+        category: newHabitCategory || undefined,
+        tags: parsedTags.length > 0 ? parsedTags : undefined,
+      };
 
-    await saveHabits([...habits, newHabit]);
+      await saveHabits([...habits, newHabit]);
+    }
+
     setNewHabitName("");
     setNewHabitCategory("");
     setNewHabitTags("");
-    setShowAddModal(false);
-  }, [newHabitName, newHabitCategory, newHabitTags, habits, saveHabits]);
+    setEditingHabit(null);
+    setShowHabitModal(false);
+  }, [newHabitName, newHabitCategory, newHabitTags, editingHabit, habits, saveHabits]);
+
+  const handleCloseHabitModal = useCallback(() => {
+    setNewHabitName("");
+    setNewHabitCategory("");
+    setNewHabitTags("");
+    setEditingHabit(null);
+    setShowHabitModal(false);
+  }, []);
+
+  const handleOpenAddHabitModal = useCallback(() => {
+    handleCloseHabitModal();
+    setShowHabitModal(true);
+  }, [handleCloseHabitModal]);
+
+  const handleOpenEditHabitModal = useCallback((habit: Habit) => {
+    setEditingHabit(habit);
+    setNewHabitName(habit.name);
+    setNewHabitCategory(habit.category || "");
+    setNewHabitTags((habit.tags || []).join(", "));
+    setShowHabitModal(true);
+  }, []);
 
   const handleDeleteHabit = useCallback(
     async (habitId: string) => {
@@ -687,6 +725,7 @@ export const Dashboard: React.FC = () => {
                   onDelete={handleDeleteHabit}
                   onShowStats={handleShowStats}
                   onSetReminder={handleSetReminder}
+                  onEdit={handleOpenEditHabitModal}
                 />
               ))}
               {provided.placeholder}
@@ -695,16 +734,16 @@ export const Dashboard: React.FC = () => {
         </Droppable>
       </DragDropContext>
 
-      <button className="add-habit-btn" onClick={() => setShowAddModal(true)}>
+      <button className="add-habit-btn" onClick={handleOpenAddHabitModal}>
         <Plus size={16} /> Add New Habit
       </button>
 
-      {showAddModal && (
-        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+      {showHabitModal && (
+        <div className="modal-overlay" onClick={handleCloseHabitModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Create New Habit</h3>
-              <button onClick={() => setShowAddModal(false)}>✕</button>
+              <h3>{editingHabit ? "Edit Habit" : "Create New Habit"}</h3>
+              <button onClick={handleCloseHabitModal}>✕</button>
             </div>
             <input
               type="text"
@@ -743,12 +782,12 @@ export const Dashboard: React.FC = () => {
             <div className="modal-actions" style={{ marginTop: "16px" }}>
               <button
                 className="cancel-btn"
-                onClick={() => setShowAddModal(false)}
+                onClick={handleCloseHabitModal}
               >
                 Cancel
               </button>
-              <button className="create-btn" onClick={handleAddHabit}>
-                Create Habit
+              <button className="create-btn" onClick={handleSaveHabit}>
+                {editingHabit ? "Save Changes" : "Create Habit"}
               </button>
             </div>
           </div>

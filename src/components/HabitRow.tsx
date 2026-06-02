@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
-import { GripVertical, Trash2, Flame, BarChart3, Bell, Tag } from "lucide-react";
+import { GripVertical, Trash2, Edit3, Flame, BarChart3, Bell, Tag } from "lucide-react";
 import { Habit, HabitStats, ViewType } from "../types";
 import {
   format,
@@ -23,6 +23,7 @@ interface HabitRowProps {
   onDelete: (habitId: string) => void;
   onShowStats: (habit: Habit) => void;
   onSetReminder: (habit: Habit) => void;
+  onEdit: (habit: Habit) => void;
 }
 
 export const HabitRow: React.FC<HabitRowProps> = ({
@@ -196,6 +197,13 @@ export const HabitRow: React.FC<HabitRowProps> = ({
               title="Set reminder"
             >
               <Bell size={14} />
+            </button>
+            <button
+              className="edit-habit-btn"
+              onClick={() => onEdit(habit)}
+              title="Edit habit"
+            >
+              <Edit3 size={14} />
             </button>
 
             {showDeleteConfirm ? (
